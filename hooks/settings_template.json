@@ -1,0 +1,57 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🔧 Executing: $TOOL_INPUT' | head -c 100"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command", 
+            "command": "echo '📝 Processing request in: $CLAUDE_PROJECT_DIR'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '✅ File modified - consider running tests'"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allowlist": [
+      "Read",
+      "Write", 
+      "Edit",
+      "MultiEdit",
+      "Bash",
+      "Glob",
+      "Grep",
+      "LS",
+      "TodoWrite",
+      "Task",
+      "WebFetch",
+      "WebSearch"
+    ]
+  },
+  "notifications": {
+    "tool_permission_requests": true,
+    "idle_timeout_minutes": 30
+  }
+}
