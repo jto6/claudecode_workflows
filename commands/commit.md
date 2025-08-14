@@ -53,6 +53,19 @@ Proceed with this commit plan? [y/n]
 
 **STOP HERE** - Wait for explicit user approval before proceeding.
 
+## Phase 1.5: Pre-Commit Test Environment Verification
+
+**Before starting any commits**, verify the test environment:
+
+### Test Environment Check
+- **MANDATORY**: Verify that the full test suite can run successfully
+- Check for test dependencies and activate environments (venv, etc.)
+- Run a quick test to ensure the test framework works: `pytest --version`, `npm test --help`, etc.  
+- **If tests cannot run**: Set up the environment completely before proceeding with any commits
+- **Report test environment status** to user before starting commits
+
+This prevents discovering test issues mid-commit and ensures quality control from the start.
+
 ## Phase 2: Per-Commit Execution Loop
 
 For each approved commit, execute this loop:
@@ -64,10 +77,31 @@ For each approved commit, execute this loop:
 - Look for existing test files and test patterns in the codebase
 
 ### 2. Run Full Test Suite
-- Identify and run the project's test command (npm test, pytest, make test, etc.)
-- Execute all tests and report results
-- **BLOCK commit if any tests fail** - do not proceed
-- If tests pass, continue to next step
+**CRITICAL: This step is MANDATORY and cannot be skipped**
+
+#### 2.1 Test Environment Setup
+- **First**: Check if test dependencies are available
+- **If missing dependencies**: Set up the test environment before proceeding
+  - Look for `venv/`, `node_modules/`, or similar dependency directories  
+  - Check for `requirements.txt`, `package.json`, or similar dependency files
+  - Run setup commands: `source venv/bin/activate`, `npm install`, etc.
+  - **NEVER proceed with commits until tests can run**
+
+#### 2.2 Test Execution
+- Identify the project's test command (pytest, npm test, make test, etc.)
+- **Always run the full test suite** - not just basic tests
+- Execute all tests and report results in detail
+- **BLOCK commit if ANY tests fail** - do not proceed under any circumstances
+- **BLOCK commit if tests cannot run due to missing dependencies** 
+- Only continue to next step if ALL tests pass
+
+#### 2.3 Test Failure Handling
+- If tests fail, **immediately stop the commit process**
+- Report exactly which tests failed and why
+- Ask user how to proceed:
+  - Fix the failing tests first
+  - Abort the commit process
+  - **NEVER ignore or skip failing tests**
 
 ### 3. Interactive Review Process
 - Stage only the files for this specific commit
@@ -105,10 +139,18 @@ After all commits:
 ## Instructions
 
 1. **Always start with Phase 1** - full analysis and planning
-2. **Wait for user approval** before executing any commits
-3. **Stop and request approval** for each individual commit
-4. **Preserve partial progress** - if a later commit is rejected, earlier commits remain
-5. **Use parallel tool calls** for efficiency where appropriate
-6. **Be thorough but respectful** of user time and preferences
+2. **MANDATORY: Verify test environment works** before any commits (Phase 1.5)
+3. **Wait for user approval** before executing any commits
+4. **NEVER commit without running full test suite** - this is non-negotiable
+5. **Stop and request approval** for each individual commit
+6. **Preserve partial progress** - if a later commit is rejected, earlier commits remain
+7. **Use parallel tool calls** for efficiency where appropriate
+8. **Be thorough but respectful** of user time and preferences
+
+### Critical Quality Gates
+- ❌ **DO NOT commit if tests fail**
+- ❌ **DO NOT commit if tests cannot run**  
+- ❌ **DO NOT skip or rationalize around test failures**
+- ✅ **DO ensure every commit passes the full test suite**
 
 Execute this workflow to create clean, atomic, well-tested commits with full user control.
