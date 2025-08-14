@@ -28,6 +28,7 @@ Analyze all changes and group them by:
 - **Subsystem** - Changes to specific modules or components
 - **Dependencies** - Related dependency updates or configuration changes
 - **Documentation** - README, docs, or comment updates
+- **Bug fixes** - Each bug fix should be in a separate commit, unless they are interdependent and the fixes cannot be separated.
 
 ### 3. Propose Atomic Commit Structure
 Create a plan showing:
