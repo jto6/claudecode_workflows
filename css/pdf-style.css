@@ -62,19 +62,10 @@ img, figure, svg {
     height: auto;
 }
 
-/* Improve SVG text rendering and alignment */
+/* Improve SVG rendering while preserving original design */
 svg {
-    font-family: "Times New Roman", serif;
     text-rendering: optimizeLegibility;
     shape-rendering: geometricPrecision;
-    font-feature-settings: "kern" 1;
-}
-
-svg text {
-    font-family: "Times New Roman", serif;
-    text-rendering: optimizeLegibility;
-    dominant-baseline: central;
-    text-anchor: middle;
 }
 
 /* Table styling with page break avoidance */
