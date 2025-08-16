@@ -1,0 +1,145 @@
+/* Default PDF styling for md-to-pdf command */
+
+body {
+    font-family: "Times New Roman", serif;
+    font-size: 14pt;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header styling with page break avoidance */
+h1 { 
+    font-size: 20pt; 
+    page-break-after: avoid; 
+    margin-top: 24pt; 
+    margin-bottom: 12pt; 
+}
+
+h2 { 
+    font-size: 18pt; 
+    page-break-after: avoid; 
+    margin-top: 18pt; 
+    margin-bottom: 9pt; 
+}
+
+h3 { 
+    font-size: 16pt; 
+    page-break-after: avoid; 
+    margin-top: 14pt; 
+    margin-bottom: 7pt; 
+}
+
+h4 { 
+    font-size: 15pt; 
+    page-break-after: avoid; 
+    margin-top: 12pt; 
+    margin-bottom: 6pt; 
+}
+
+h5 { 
+    font-size: 14pt; 
+    page-break-after: avoid; 
+    margin-top: 10pt; 
+    margin-bottom: 5pt; 
+}
+
+h6 { 
+    font-size: 13pt; 
+    page-break-after: avoid; 
+    margin-top: 8pt; 
+    margin-bottom: 4pt; 
+}
+
+/* Prevent images from splitting across pages */
+img, figure, svg {
+    page-break-inside: avoid;
+    page-break-after: auto;
+    page-break-before: auto;
+    display: block;
+    margin: 12pt auto;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Improve SVG text rendering and alignment */
+svg {
+    font-family: "Times New Roman", serif;
+    text-rendering: optimizeLegibility;
+    shape-rendering: geometricPrecision;
+    font-feature-settings: "kern" 1;
+}
+
+svg text {
+    font-family: "Times New Roman", serif;
+    text-rendering: optimizeLegibility;
+    dominant-baseline: central;
+    text-anchor: middle;
+}
+
+/* Table styling with page break avoidance */
+table {
+    border-collapse: collapse;
+    width: auto;
+    table-layout: auto;
+    page-break-inside: avoid;
+    margin: 12pt auto;
+}
+
+th, td {
+    border: 1px solid #333;
+    padding: 8px;
+    white-space: nowrap;
+}
+
+th {
+    background-color: #f0f0f0;
+}
+
+td:last-child, th:last-child {
+    white-space: normal;
+    min-width: 200px;
+}
+
+/* List formatting with page break avoidance */
+ul, ol {
+    page-break-inside: avoid;
+    margin: 12pt 0;
+}
+
+li {
+    page-break-inside: avoid;
+}
+
+/* Code blocks */
+pre, code {
+    font-family: "Courier New", monospace;
+    page-break-inside: avoid;
+}
+
+pre {
+    background-color: #f5f5f5;
+    padding: 12pt;
+    margin: 12pt 0;
+    border-left: 4pt solid #ddd;
+}
+
+/* Blockquotes */
+blockquote {
+    page-break-inside: avoid;
+    margin: 12pt 24pt;
+    padding-left: 12pt;
+    border-left: 4pt solid #ddd;
+    font-style: italic;
+}
+
+/* Paragraph spacing */
+p {
+    margin: 6pt 0;
+}
+
+/* Avoid orphans and widows */
+p, li, h1, h2, h3, h4, h5, h6 {
+    orphans: 2;
+    widows: 2;
+}

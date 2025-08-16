@@ -8,12 +8,14 @@ fi
 
 REPO_PATH="${0:A:h}"
 CLAUDE_USER_COMMANDS="$HOME/.claude/commands"
+CLAUDE_USER_TEMPLATES="$HOME/.claude/templates"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 
 echo "🚀 Installing Claude Code workflows..."
 
-# Create user commands directory
+# Create user directories
 mkdir -p "$CLAUDE_USER_COMMANDS"
+mkdir -p "$CLAUDE_USER_TEMPLATES"
 
 # Create symlinks to commands (so they auto-update with git pulls)
 for cmd_file in "$REPO_PATH/commands"/*.md; do
@@ -23,6 +25,12 @@ for cmd_file in "$REPO_PATH/commands"/*.md; do
         echo "✅ Linked /$cmd_name command"
     fi
 done
+
+# Create symlink to default CSS file for md-to-pdf
+if [[ -f "$REPO_PATH/css/pdf-style.css" ]]; then
+    ln -sf "$REPO_PATH/css/pdf-style.css" "$CLAUDE_USER_TEMPLATES/pdf-style.css"
+    echo "✅ Linked default PDF styling template"
+fi
 
 # Merge hooks configuration if settings.json exists
 if [[ -f "$REPO_PATH/hooks/settings_template.json" ]]; then
