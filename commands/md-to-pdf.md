@@ -10,10 +10,24 @@ Convert a markdown file to PDF using pandoc with wkhtmltopdf engine and consiste
 
 This command converts a markdown file to PDF with professional formatting, automatically detecting and using appropriate CSS styling:
 
-1. **CSS Detection**: Looks for `scripts/pdf-style.css` in the current repository
-2. **Fallback CSS**: If not found, uses `../BSFL/scripts/pdf-style.css` 
-3. **Professional Formatting**: Applies Times New Roman font, proper margins, and page numbering
-4. **Consistent Output**: Uses wkhtmltopdf engine for reliable PDF generation
+1. **CSS Priority System**: 
+   - First checks for project-specific `scripts/pdf-style.css` in current directory
+   - Falls back to default template at `~/.claude/templates/pdf-style.css` (symlinked during install)
+2. **HTML Header Removal**: Automatically strips HTML content before the first # header (e.g., #+TITLE, #+HTML_HEAD)
+3. **Image Protection**: Prevents images and SVGs from splitting across page boundaries
+4. **SVG Enhancement**: Improved text rendering and alignment for SVG graphics
+5. **Professional Formatting**: Applies Times New Roman font, proper margins, and page numbering
+6. **Consistent Output**: Uses wkhtmltopdf engine for reliable PDF generation
+
+## CSS Template System
+
+The default CSS template is stored in this repository at `css/pdf-style.css` and symlinked to `~/.claude/templates/pdf-style.css` during installation. This allows:
+
+- **Centralized updates**: Improvements to the default CSS are automatically available via git pull + reinstall
+- **Project overrides**: Individual projects can create `scripts/pdf-style.css` to customize styling
+- **Clean separation**: Templates are kept separate from commands in the `~/.claude/` directory structure
+
+**To modify the default PDF styling**: Edit `css/pdf-style.css` in this repository. Changes will be reflected in all future PDF generations after the symlink is updated.
 
 ## Implementation
 
@@ -27,15 +41,19 @@ if [ -z "$md_file" ]; then
 fi
 
 pdf_file="${md_file%.md}.pdf"
+temp_md=$(mktemp --suffix=.md)
 
-# Check for local CSS file, fallback to BSFL version
+# CSS file priority: local project > default template
 if [ -f "scripts/pdf-style.css" ]; then
     css_file="scripts/pdf-style.css"
 else
-    css_file="../BSFL/scripts/pdf-style.css"
+    css_file="$HOME/.claude/templates/pdf-style.css"
 fi
 
-pandoc "$md_file" -o "$pdf_file" \
+# Remove HTML content before first # header (like #+TITLE, #+HTML_HEAD, etc.)
+sed '/^#[[:space:]]/,$!d' "$md_file" > "$temp_md"
+
+pandoc "$temp_md" -o "$pdf_file" \
     --pdf-engine=wkhtmltopdf \
     --css="$css_file" \
     --pdf-engine-opt=--margin-left --pdf-engine-opt=0.5in \
@@ -43,7 +61,15 @@ pandoc "$md_file" -o "$pdf_file" \
     --pdf-engine-opt=--margin-top --pdf-engine-opt=1in \
     --pdf-engine-opt=--margin-bottom --pdf-engine-opt=1in \
     --pdf-engine-opt=--page-size --pdf-engine-opt=Letter \
-    --pdf-engine-opt=--footer-center --pdf-engine-opt="[page]"
+    --pdf-engine-opt=--footer-center --pdf-engine-opt="[page]" \
+    --pdf-engine-opt=--enable-local-file-access \
+    --pdf-engine-opt=--load-error-handling --pdf-engine-opt=ignore \
+    --pdf-engine-opt=--load-media-error-handling --pdf-engine-opt=ignore
+
+# Clean up temporary file
+rm -f "$temp_md"
+
+echo "PDF generated: $pdf_file"
 ```
 
 ## Output Format
