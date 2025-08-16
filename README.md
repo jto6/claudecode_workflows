@@ -57,6 +57,18 @@ Executes a comprehensive git commit workflow with proper analysis and validation
 
 **Usage:** Type `/commit` when ready to commit changes.
 
+### `/md-to-pdf` - Markdown to PDF Converter
+Converts markdown files to professionally formatted PDFs with consistent styling.
+
+**What it does:**
+- Converts markdown to PDF using pandoc and wkhtmltopdf
+- Automatically detects and uses appropriate CSS styling
+- Applies Times New Roman font with proper margins
+- Adds page numbering and professional formatting
+- Supports both local and fallback CSS files
+
+**Usage:** Type `/md-to-pdf filename.md` to convert any markdown file to PDF.
+
 ## Updating Workflows
 
 To get the latest workflow updates:
@@ -84,7 +96,8 @@ claude_code_workflows/
 ├── install.zsh                    # Installation script
 ├── commands/                      # Slash command templates
 │   ├── CA_init.md                # Codebase analysis workflow
-│   └── commit.md                 # Git commit workflow
+│   ├── commit.md                 # Git commit workflow
+│   └── md-to-pdf.md              # Markdown to PDF converter
 └── hooks/                        # Claude Code configuration
     └── settings_template.json    # Hooks and permissions
 ```
