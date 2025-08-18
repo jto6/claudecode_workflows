@@ -1,6 +1,6 @@
 # Markdown to PDF Converter - /md-to-pdf
 
-Convert a markdown file to PDF using pandoc with wkhtmltopdf engine and consistent styling.
+Convert a markdown file to PDF using pandoc with Chrome headless engine for accurate SVG rendering.
 
 ## Usage
 
@@ -15,9 +15,9 @@ This command converts a markdown file to PDF with professional formatting, autom
    - Falls back to default template at `~/.claude/templates/pdf-style.css` (symlinked during install)
 2. **HTML Header Removal**: Automatically strips HTML content before the first # header (e.g., #+TITLE, #+HTML_HEAD)
 3. **Image Protection**: Prevents images and SVGs from splitting across page boundaries
-4. **SVG Enhancement**: Improved text rendering and alignment for SVG graphics
+4. **SVG Fidelity**: Accurate SVG rendering that preserves original text positioning and fonts
 5. **Professional Formatting**: Applies Times New Roman font, proper margins, and page numbering
-6. **Consistent Output**: Uses wkhtmltopdf engine for reliable PDF generation
+6. **Accurate SVG Rendering**: Uses Chrome headless engine for pixel-perfect SVG text alignment
 
 ## CSS Template System
 
@@ -53,18 +53,22 @@ fi
 # Remove HTML content before first # header (like #+TITLE, #+HTML_HEAD, etc.)
 sed '/^#[[:space:]]/,$!d' "$md_file" > "$temp_md"
 
-pandoc "$temp_md" -o "$pdf_file" \
-    --pdf-engine=wkhtmltopdf \
+# Convert markdown to HTML first (without embedding resources to preserve SVG file references)
+html_file="${md_file%.md}.html"
+pandoc "$temp_md" -o "$html_file" \
     --css="$css_file" \
-    --pdf-engine-opt=--margin-left --pdf-engine-opt=0.5in \
-    --pdf-engine-opt=--margin-right --pdf-engine-opt=0.5in \
-    --pdf-engine-opt=--margin-top --pdf-engine-opt=1in \
-    --pdf-engine-opt=--margin-bottom --pdf-engine-opt=1in \
-    --pdf-engine-opt=--page-size --pdf-engine-opt=Letter \
-    --pdf-engine-opt=--footer-center --pdf-engine-opt="[page]" \
-    --pdf-engine-opt=--enable-local-file-access \
-    --pdf-engine-opt=--load-error-handling --pdf-engine-opt=ignore \
-    --pdf-engine-opt=--load-media-error-handling --pdf-engine-opt=ignore
+    --standalone
+
+# Use Chrome to generate PDF from HTML with accurate SVG rendering
+google-chrome --headless \
+    --disable-gpu \
+    --no-sandbox \
+    --print-to-pdf="$pdf_file" \
+    --print-to-pdf-no-header \
+    --virtual-time-budget=5000 \
+    "file://$html_file"
+
+echo "Intermediate HTML saved: $html_file"
 
 # Clean up temporary file
 rm -f "$temp_md"
@@ -83,8 +87,8 @@ echo "PDF generated: $pdf_file"
 ## Dependencies
 
 - `pandoc` - Document converter
-- `wkhtmltopdf` - PDF rendering engine
-- CSS file - Either local `scripts/pdf-style.css` or fallback `../BSFL/scripts/pdf-style.css`
+- `google-chrome` - Chrome browser for PDF rendering engine
+- CSS file - Either local `scripts/pdf-style.css` or fallback `~/.claude/templates/pdf-style.css`
 
 ## Examples
 
@@ -108,6 +112,7 @@ The CSS file provides:
 ## Error Handling
 
 - Validates input file is provided
-- Uses appropriate CSS file based on availability
+- Uses appropriate CSS file based on availability  
 - Pandoc will warn if document lacks title metadata
+- Chrome requires local file access for SVGs and images
 - PDF generation proceeds even with warnings
