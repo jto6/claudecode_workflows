@@ -13,7 +13,7 @@ This repository provides:
 
 1. Clone this repository to a persistent location:
 ```bash
-git clone <your-repo-url> ~/.claude/workflows
+git clone git@github.com:jto6/claudecode_workflows.git ~/.claude/workflows
 cd ~/.claude/workflows
 ```
 
