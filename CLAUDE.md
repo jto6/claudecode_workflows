@@ -13,7 +13,8 @@ All slash commands are defined as individual markdown files in the `commands/` d
 ```
 commands/
 ├── CA_init.md          # /CA_init command
-├── commit.md           # /commit command  
+├── commit.md           # /commit command
+├── drawio-to-svg.md    # /drawio-to-svg command  
 └── md-to-pdf.md        # /md-to-pdf command
 ```
 
@@ -58,7 +59,8 @@ When creating new commands:
 ## Existing Commands
 
 - `/CA_init` - Comprehensive codebase analysis initialization
-- `/commit` - Interactive atomic commit workflow with testing  
+- `/commit` - Interactive atomic commit workflow with testing
+- `/drawio-to-svg` - Convert Draw.io files to SVG format with smart batch processing  
 - `/md-to-pdf` - Convert markdown files to professionally formatted PDFs
 
 See individual command files in `commands/` directory for detailed usage instructions.

@@ -57,6 +57,21 @@ Executes a comprehensive git commit workflow with proper analysis and validation
 
 **Usage:** Type `/commit` when ready to commit changes.
 
+### `/drawio-to-svg` - Draw.io to SVG Converter
+Converts Draw.io (.drawio) files to SVG format with intelligent batch processing.
+
+**What it does:**
+- Converts individual .drawio files to .svg in the same directory
+- Batch processes directories, only converting when needed (missing or outdated SVG files)
+- Repository-wide search when no arguments provided
+- Smart file comparison based on modification timestamps
+- Comprehensive error handling and progress feedback
+
+**Usage:** 
+- Single file: `/drawio-to-svg diagram.drawio`
+- Directory: `/drawio-to-svg docs/diagrams/`  
+- Repository-wide: `/drawio-to-svg`
+
 ### `/md-to-pdf` - Markdown to PDF Converter
 Converts markdown files to professionally formatted PDFs with consistent styling.
 
@@ -97,6 +112,7 @@ claude_code_workflows/
 ├── commands/                      # Slash command templates
 │   ├── CA_init.md                # Codebase analysis workflow
 │   ├── commit.md                 # Git commit workflow
+│   ├── drawio-to-svg.md          # Draw.io to SVG converter
 │   └── md-to-pdf.md              # Markdown to PDF converter
 └── hooks/                        # Claude Code configuration
     └── settings_template.json    # Hooks and permissions
