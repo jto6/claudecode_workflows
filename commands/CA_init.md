@@ -97,6 +97,10 @@ Create a section with specific prompts for further codebase exploration:
 
 ## Instructions
 
+**IMPORTANT: Always check ~/.claude/commands directory for custom slash commands before attempting to execute them as bash commands. Slash commands (starting with /) are Claude Code custom commands, not bash commands.**
+
+When encountering any command starting with `/`, first read the corresponding `.md` file in `~/.claude/commands/` to understand the proper usage and implementation before executing.
+
 1. Use available search tools (Glob, Grep, Read) to explore the codebase systematically
 2. Start with high-level structure, then drill down into specific components
 3. Focus on understanding rather than just cataloging files
@@ -105,4 +109,4 @@ Create a section with specific prompts for further codebase exploration:
 6. Include the recommended prompts section to guide future investigations
 7. Create actionable insights for developers working with this code
 
-Create a well-structured `code_analysis.md` file that serves as a comprehensive guide for understanding this codebase and provides a roadmap for deeper exploration.
+Create a well-structured `code_analysis.md` file that serves as a comprehensive guide for understanding this codebase and provides a roadmap for deeper exploration. **Include the slash command reminder at the top of the generated code_analysis.md file.**

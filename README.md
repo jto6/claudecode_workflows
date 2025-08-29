@@ -90,9 +90,14 @@ To get the latest workflow updates:
 ```bash
 cd ~/.claude/workflows
 git pull
+./install.zsh
 ```
 
-No reinstallation needed - symlinks automatically use the updated templates.
+The install script is safe to re-run - it will:
+- Update all command symlinks to the latest versions
+- Refresh the global CLAUDE.md instructions  
+- Merge any new hooks configuration
+- Show what was updated vs newly installed
 
 ## Configuration
 
@@ -100,6 +105,15 @@ The workflows install hooks that provide:
 - **Tool execution feedback** - Shows what commands are being run
 - **File modification alerts** - Reminds to run tests after edits
 - **Session context** - Displays current project directory
+
+### Global Instructions
+
+The installer creates `~/.claude/CLAUDE.md` with global instructions that teach Claude Code to:
+- **Check for slash commands** before executing them as bash commands
+- **Read command definitions** from `~/.claude/commands/` directory
+- **Understand the difference** between Claude Code slash commands and bash commands
+
+This ensures slash commands work correctly across all repositories without needing to add instructions to each project's CLAUDE.md file.
 
 Hooks configuration is in `hooks/settings_template.json` and gets merged with your existing Claude Code settings.
 
@@ -114,6 +128,10 @@ claude_code_workflows/
 │   ├── commit.md                 # Git commit workflow
 │   ├── drawio-to-svg.md          # Draw.io to SVG converter
 │   └── md-to-pdf.md              # Markdown to PDF converter
+├── templates/                     # Global templates
+│   └── CLAUDE.md                 # Global Claude Code instructions
+├── css/                          # Styling templates
+│   └── pdf-style.css             # Default PDF styling
 └── hooks/                        # Claude Code configuration
     └── settings_template.json    # Hooks and permissions
 ```
