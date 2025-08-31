@@ -2,11 +2,28 @@
 
 Execute an interactive, atomic commit workflow with comprehensive analysis and user approval at each stage.
 
+## Usage
+```
+/commit           # Interactive mode with approvals
+/commit -y        # Auto-approve mode (skip interactive prompts)
+```
+
 ## Commit Convention
 
-Use format: `<subsystem>: one-line summary`
+**Subject Line Format:** `<subsystem>: one-line summary`
 
-Examples:
+**Full Commit Structure:**
+```
+<subsystem>: one-line summary
+
+Detailed explanation of the changes in the commit body:
+- What was changed and why
+- Key implementation details
+- Any important context or decisions
+- Breaking changes or migration notes if applicable
+```
+
+**Subject Line Examples:**
 - `timer: add automatic break transition with alarm`
 - `gui: implement dark/light theme switching`
 - `audio: add system sound file browser support`
@@ -51,7 +68,8 @@ Files: file3.md, file4.json
 Proceed with this commit plan? [y/n]
 ```
 
-**STOP HERE** - Wait for explicit user approval before proceeding.
+**Interactive Mode:** Wait for explicit user approval before proceeding.
+**Auto-Approve Mode (-y):** Skip this approval step and proceed directly to execution.
 
 ## Phase 1.5: Pre-Commit Test Environment Verification
 
@@ -105,10 +123,11 @@ For each approved commit, execute this loop:
 
 ### 3. Interactive Review Process
 - Stage only the files for this specific commit
-- Generate commit message following the convention
+- Generate commit message following the convention (with subject and detailed body)
 - Show the staged changes summary
 - Present commit message for review
-- **Request explicit approval**: "Accept this commit? [y/n]"
+- **Interactive Mode:** Request explicit approval: "Accept this commit? [y/n]"
+- **Auto-Approve Mode (-y):** Skip individual commit approval and proceed directly
 
 ### 4. Handle User Decision
 - **If accepted**: Create the commit and continue to next commit
@@ -138,14 +157,20 @@ After all commits:
 
 ## Instructions
 
+**Before starting, check if `-y` flag was provided:**
+- **Interactive Mode (default):** Follow all approval steps
+- **Auto-Approve Mode (-y):** Skip plan approval and individual commit approvals, but still show the plan and commit details
+
 1. **Always start with Phase 1** - full analysis and planning
 2. **MANDATORY: Verify test environment works** before any commits (Phase 1.5)
-3. **Wait for user approval** before executing any commits
-4. **NEVER commit without running full test suite** - this is non-negotiable
-5. **Stop and request approval** for each individual commit
-6. **Preserve partial progress** - if a later commit is rejected, earlier commits remain
-7. **Use parallel tool calls** for efficiency where appropriate
-8. **Be thorough but respectful** of user time and preferences
+3. **Interactive Mode:** Wait for user approval before executing any commits
+4. **Auto-Approve Mode (-y):** Show plan but proceed without approval prompts
+5. **NEVER commit without running full test suite** - this is non-negotiable (applies to both modes)
+6. **Interactive Mode:** Stop and request approval for each individual commit
+7. **Auto-Approve Mode (-y):** Show commit details but proceed without individual approvals
+8. **Preserve partial progress** - if a later commit is rejected, earlier commits remain
+9. **Use parallel tool calls** for efficiency where appropriate
+10. **Be thorough but respectful** of user time and preferences
 
 ### Critical Quality Gates
 - ❌ **DO NOT commit if tests fail**
