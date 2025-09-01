@@ -64,11 +64,13 @@ Files: file1.py, file2.js
 
 Commit 2: "<subsystem>: <summary>"  
 Files: file3.md, file4.json
-
-Proceed with this commit plan? [y/n]
 ```
 
-**Interactive Mode:** Wait for explicit user approval before proceeding.
+**Interactive Mode:** Present choices for user selection:
+1. Proceed with this commit plan
+2. Modify the plan 
+3. Abort commit process
+
 **Auto-Approve Mode (-y):** Skip this approval step and proceed directly to execution.
 
 ## Phase 1.5: Pre-Commit Test Environment Verification
@@ -126,15 +128,19 @@ For each approved commit, execute this loop:
 - Generate commit message following the convention (with subject and detailed body)
 - Show the staged changes summary
 - Present commit message for review
-- **Interactive Mode:** Request explicit approval: "Accept this commit? [y/n]"
+- **Interactive Mode:** Present choices for user selection:
+  1. Accept this commit
+  2. Modify and retry this commit
+  3. Skip this commit
+  4. Abort remaining commits
 - **Auto-Approve Mode (-y):** Skip individual commit approval and proceed directly
 
 ### 4. Handle User Decision
-- **If accepted**: Create the commit and continue to next commit
-- **If rejected**: Leave previous commits intact, ask how to proceed:
-  - Modify files and retry this commit
-  - Skip this commit  
-  - Abort remaining commits
+Based on user selection:
+- **Option 1 (Accept)**: Create the commit and continue to next commit
+- **Option 2 (Modify)**: Allow user to modify files and retry this commit
+- **Option 3 (Skip)**: Leave previous commits intact, move to next commit in plan
+- **Option 4 (Abort)**: Stop the commit process, leave previous commits intact
 
 ### 5. Post-Commit Verification
 - Show commit details with `git log -1 --stat`
