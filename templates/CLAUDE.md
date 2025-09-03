@@ -15,3 +15,34 @@ To see all available commands, check: `ls ~/.claude/commands/`
 1. Before executing any `/command`, read its implementation from `~/.claude/commands/command.md`
 2. Follow the specific instructions provided in each command file
 3. These commands are designed to work across all repositories and projects
+
+## Markdown Formatting Guidelines
+
+### Lists
+- Always include a blank line *before* starting any list
+- Do NOT include blank lines between list items
+- For nested lists, use proper indentation (usually 2 or 4 spaces)
+
+#### Examples
+
+##### Correct:
+This is a paragraph.
+
+- Item 1
+- Item 2
+- Item 3
+
+##### Incorrect:
+This is a paragraph.
+- Item 1
+- Item 2
+- Item 3
+
+##### Incorrect:
+This is a paragraph.
+
+- Item 1
+
+- Item 2
+
+- Item 3
