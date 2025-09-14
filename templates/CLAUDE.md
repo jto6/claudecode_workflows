@@ -27,30 +27,5 @@ To see all available commands, check: `ls ~/.claude/commands/`
 
 ### Lists
 
-- Always include a blank line *before* starting any list
 - Do NOT include blank lines between list items
-- For nested lists, use proper indentation (usually 2 or 4 spaces)
-
-#### Examples
-
-##### Correct:
-This is a paragraph.
-
-- Item 1
-- Item 2
-- Item 3
-
-##### Incorrect:
-This is a paragraph.
-- Item 1
-- Item 2
-- Item 3
-
-##### Incorrect:
-This is a paragraph.
-
-- Item 1
-
-- Item 2
-
-- Item 3
+- For nested lists, use proper indentation (usually a tab)
