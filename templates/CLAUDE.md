@@ -18,7 +18,15 @@ To see all available commands, check: `ls ~/.claude/commands/`
 
 ## Markdown Formatting Guidelines
 
+### Overall structure
+
+- Use only one H1 heading (#) for the document title. This means:
+  - Use # Document Title for the main title
+  - Use ## Section Headings for major sections
+  - Use ### Subsection Headings for subsections
+
 ### Lists
+
 - Always include a blank line *before* starting any list
 - Do NOT include blank lines between list items
 - For nested lists, use proper indentation (usually 2 or 4 spaces)
