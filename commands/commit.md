@@ -67,9 +67,10 @@ Files: file3.md, file4.json
 ```
 
 **Interactive Mode:** Present choices for user selection:
-1. Proceed with this commit plan
-2. Modify the plan 
-3. Abort commit process
+1. ✅ Proceed with this commit plan
+2. 🚀 Proceed with this commit plan (no further approvals needed)
+3. 🔄 Modify the plan
+4. ❌ Abort commit process
 
 **Auto-Approve Mode (-y):** Skip this approval step and proceed directly to execution.
 
@@ -133,10 +134,16 @@ For each approved commit, execute this loop:
   2. Modify and retry this commit
   3. Skip this commit
   4. Abort remaining commits
-- **Auto-Approve Mode (-y):** Skip individual commit approval and proceed directly
+- **Auto-Approve Mode (-y or option 2 from plan approval):** Skip individual commit approval and proceed directly
 
 ### 4. Handle User Decision
-Based on user selection:
+Based on user selection from plan approval:
+- **Option 1 (Proceed with plan)**: Execute each commit with individual approval prompts
+- **Option 2 (Proceed without further approvals)**: Execute all commits automatically without individual approval prompts
+- **Option 3 (Modify plan)**: Allow user to modify the commit plan
+- **Option 4 (Abort)**: Stop the commit process completely
+
+Based on individual commit approval (when in interactive mode):
 - **Option 1 (Accept)**: Create the commit and continue to next commit
 - **Option 2 (Modify)**: Allow user to modify files and retry this commit
 - **Option 3 (Skip)**: Leave previous commits intact, move to next commit in plan
@@ -164,16 +171,22 @@ After all commits:
 ## Instructions
 
 **Before starting, check if `-y` flag was provided:**
-- **Interactive Mode (default):** Follow all approval steps
+- **Interactive Mode (default):** Follow all approval steps, including plan approval and individual commit approvals
 - **Auto-Approve Mode (-y):** Skip plan approval and individual commit approvals, but still show the plan and commit details
+
+**Plan Approval Options:**
+- **Option 1:** Proceed with individual approval for each commit
+- **Option 2:** Proceed without further approvals (equivalent to auto-approve mode for remaining commits)
+- **Option 3:** Modify the plan
+- **Option 4:** Abort the process
 
 1. **Always start with Phase 1** - full analysis and planning
 2. **MANDATORY: Verify test environment works** before any commits (Phase 1.5)
 3. **Interactive Mode:** Wait for user approval before executing any commits
-4. **Auto-Approve Mode (-y):** Show plan but proceed without approval prompts
-5. **NEVER commit without running full test suite** - this is non-negotiable (applies to both modes)
-6. **Interactive Mode:** Stop and request approval for each individual commit
-7. **Auto-Approve Mode (-y):** Show commit details but proceed without individual approvals
+4. **Auto-Approve Mode (-y or option 2):** Show plan but proceed without approval prompts
+5. **NEVER commit without running full test suite** - this is non-negotiable (applies to all modes)
+6. **Interactive Mode (option 1):** Stop and request approval for each individual commit
+7. **Auto-Approve Mode (-y or option 2):** Show commit details but proceed without individual approvals
 8. **Preserve partial progress** - if a later commit is rejected, earlier commits remain
 9. **Use parallel tool calls** for efficiency where appropriate
 10. **Be thorough but respectful** of user time and preferences
