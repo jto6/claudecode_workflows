@@ -27,5 +27,78 @@ To see all available commands, check: `ls ~/.claude/commands/`
 
 ### Lists
 
+- Always include a blank line *before* starting any list
 - Do NOT include blank lines between list items
 - For nested lists, use proper indentation (usually a tab)
+
+#### Examples
+
+##### Correct:
+This is a paragraph.
+
+- Item 1
+- Item 2
+- Item 3
+
+##### Incorrect:
+This is a paragraph.
+- Item 1
+- Item 2
+- Item 3
+
+##### Incorrect:
+This is a paragraph.
+
+- Item 1
+
+- Item 2
+
+- Item 3
+
+### ASCII Art Diagrams
+
+When creating ASCII art box diagrams (using characters like `┌`, `─`, `┐`, `│`, `└`, `┘`):
+
+- All lines within a box diagram must have identical **display width**
+- Pad inner lines with spaces so the right border `│` aligns perfectly with the outer box edges
+- The top border line (`┌───...───┐`) sets the target width - all other lines must match exactly
+- For nested boxes, ensure the inner box plus surrounding padding equals the outer box width
+
+#### Important: Unicode Characters are Multi-Byte
+
+Box-drawing characters (`┌`, `─`, `│`, etc.) are Unicode and occupy 3 bytes each but display as 1 character width. Standard tools like `awk '{print length}'` count bytes, not display width, giving incorrect results.
+
+#### Verification Method
+
+After creating or editing a diagram, verify alignment using this Python script:
+
+```python
+python3 -c "
+import unicodedata
+def display_width(s):
+    return sum(2 if unicodedata.east_asian_width(c) in ('F','W') else 1 for c in s)
+with open('FILENAME', 'r') as f:
+    for i, line in enumerate(f, 1):
+        line = line.rstrip('\n')
+        if line and line[0] in '┌├│└':
+            print(f'{display_width(line):3d}: {line}')
+"
+```
+
+All box lines should show the same width number. If any differ, add or remove spaces before the closing `│` to fix alignment.
+
+#### Example of Correct Alignment:
+
+```
+┌─────────────────────────────────────────┐
+│           PROPERLY ALIGNED BOX          │
+├─────────────────────────────────────────┤
+│                                         │
+│  Content line 1                         │
+│  Content line 2 (longer text here)      │
+│  Short                                  │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+Every line above has exactly 43 display width, with padding added before the closing `│`.
