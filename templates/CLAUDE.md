@@ -55,6 +55,73 @@ This is a paragraph.
 
 - Item 3
 
+### Tables
+
+Use pipe tables for simple tabular data, but ensure proper formatting and consider width constraints.
+
+#### Pipe Table Formatting
+
+- Add spaces within cells so all vertical bar delimiters (`|`) align vertically across rows
+- Each column should have consistent width with content left-padded or right-padded as appropriate
+- The header separator row (`|---|`) should match the column widths
+
+##### Incorrect (unaligned):
+
+```
+| Name | Description |
+|------|-------------|
+| **Short** | A brief item |
+| **Much Longer Name** | This has more text |
+```
+
+##### Correct (aligned):
+
+```
+| Name                 | Description        |
+|----------------------|--------------------|
+| **Short**            | A brief item       |
+| **Much Longer Name** | This has more text |
+```
+
+#### When to Use Grid Tables
+
+If a properly formatted pipe table would exceed **70 characters in width**, use grid table format (emacs table.el style) instead. Grid tables support multi-line cells, allowing wide content to wrap and keep the table within the 70-character limit.
+
+When converting to a grid table:
+
+- Distribute column widths to fit within 70 characters total
+- Wrap cell content across multiple lines as needed
+- Choose column widths that make the table readable and professional
+- Use `=` for the header separator row, `-` for all other row separators
+
+#### Grid Table Format
+
+Basic structure:
+
+```
++------------+------------+------------+
+| Header 1   | Header 2   | Header 3   |
++============+============+============+
+| Cell 1     | Cell 2     | Cell 3     |
++------------+------------+------------+
+| Cell 4     | Cell 5     | Cell 6     |
++------------+------------+------------+
+```
+
+With multi-line cells (for wrapping wide content):
+
+```
++----------------------+----------------------------------------------+
+| Specification Area   | Relevance to Part 1                          |
++======================+==============================================+
+| **SWS OS**           | Task configuration, scheduling, interrupt    |
+|                      | handling, alarms, and counters               |
++----------------------+----------------------------------------------+
+| **SWS MCU Driver**   | Clock configuration, reset handling,         |
+|                      | low-power modes                              |
++----------------------+----------------------------------------------+
+```
+
 ### ASCII Art Diagrams
 
 When creating ASCII art box diagrams (using characters like `┌`, `─`, `┐`, `│`, `└`, `┘`):
