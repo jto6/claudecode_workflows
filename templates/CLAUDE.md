@@ -89,13 +89,15 @@ Use pipe tables for simple tabular data, but ensure proper formatting and consid
 
 #### When to Use Grid Tables
 
-If a properly formatted pipe table would exceed **70 characters in width**, use grid table format (emacs table.el style) instead. Grid tables support multi-line cells, allowing wide content to wrap and keep the table within the 70-character limit.
+If a properly formatted pipe table would exceed **150 characters in width**, use grid table format (emacs table.el style) instead. Grid tables support multi-line cells, allowing wide content to wrap and keep the table within the 150-character limit.
 
 When converting to a grid table:
 
-- Distribute column widths to fit within 70 characters total
+- Distribute column widths to fit within the 150 characters total
 - Wrap cell content across multiple lines as needed
-- Choose column widths that make the table readable and professional
+- Choose column widths that minimizes the total height of the table
+	- make some columns wider than other to best make use of cell space
+	- overall, make the table readable and professional
 - Use `=` for the header separator row, `-` for all other row separators
 
 #### Grid Table Format
@@ -173,3 +175,5 @@ All box lines should show the same width number. If any differ, add or remove sp
 ```
 
 Every line above has exactly 43 display width, with padding added before the closing `│`.
+
+
