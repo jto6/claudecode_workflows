@@ -16,6 +16,10 @@ To see all available commands, check: `ls ~/.claude/commands/`
 2. Follow the specific instructions provided in each command file
 3. These commands are designed to work across all repositories and projects
 
+## General Formatting Guidelines
+
+When editing a source file that uses tabs (vs spaces) for indention, preserve the use of tabs.
+
 ## Markdown Formatting Guidelines
 
 ### Overall structure
