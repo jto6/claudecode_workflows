@@ -63,6 +63,20 @@ This is a paragraph.
 
 Use pipe tables for simple tabular data, but ensure proper formatting and consider width constraints.
 
+#### Pre-Edit Checklist (MANDATORY)
+
+**Before creating or editing ANY table, explicitly verify:**
+
+1. **Estimate total width** - Count characters for each column including delimiters
+2. **Will width exceed 150 chars?** → Use grid table format
+3. **Does any column contain multi-sentence content or descriptions?** → Almost certainly needs grid format
+4. **Are column widths balanced** for the content they contain?
+
+**When creating tables, proactively state your format decision:**
+> "This table will be approximately X characters wide, so I'm using [pipe/grid] format per CLAUDE.md guidelines."
+
+This explicit acknowledgment ensures the guidelines are applied, not just known.
+
 #### Pipe Table Formatting
 
 - Add spaces within cells so all vertical bar delimiters (`|`) align vertically across rows
