@@ -32,6 +32,27 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "paplay /usr/share/sounds/gnome/default/alerts/swing.ogg 2>&1 || afplay /System/Library/Sounds/Glass.aiff 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "paplay /usr/share/sounds/gnome/default/alerts/string.ogg 2>&1 || afplay /System/Library/Sounds/Glass.aiff 2>&1 || true"
+          }
+        ]
+      }
     ]
   },
   "permissions": {
