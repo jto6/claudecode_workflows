@@ -71,6 +71,8 @@ Use pipe tables for simple tabular data, but ensure proper formatting and consid
 2. **Will width exceed 150 chars?** → Use grid table format
 3. **Does any column contain multi-sentence content or descriptions?** → Almost certainly needs grid format
 4. **Are column widths balanced** for the content they contain?
+5. **Are columns aligned?** See [incorrect alignment example](#incorrect-unaligned) vs [correct alignment example](#correct-aligned)
+
 
 **When creating tables, proactively state your format decision:**
 > "This table will be approximately X characters wide, so I'm using [pipe/grid] format per CLAUDE.md guidelines."
