@@ -31,26 +31,39 @@ When editing a source file that uses tabs (vs spaces) for indention, preserve th
 
 ### Lists
 
-- Always include a blank line *before* starting any list
+- Always include a blank line between a **paragraph** and a list
+- A blank line is NOT required when a list immediately follows a **section header** (lines starting with `#`)
 - Do NOT include blank lines between list items
 - For nested lists, use proper indentation (usually a tab)
 
+**CRITICAL**: Failing to include a blank line between a paragraph and a list will cause Pandoc to render the list incorrectly (as a continuation of the paragraph rather than a proper list). This is a hard requirement, not a style preference. Always verify list formatting before finishing any markdown file.
+
 #### Examples
 
-##### Correct:
+##### Correct (list after paragraph):
+
 This is a paragraph.
 
 - Item 1
 - Item 2
 - Item 3
 
-##### Incorrect:
+##### Correct (list after section header):
+
+###### Section Header
+- Item 1
+- Item 2
+- Item 3
+
+##### Incorrect (missing blank line after paragraph):
+
 This is a paragraph.
 - Item 1
 - Item 2
 - Item 3
 
-##### Incorrect:
+##### Incorrect (blank lines between list items):
+
 This is a paragraph.
 
 - Item 1
