@@ -57,6 +57,18 @@ Executes a comprehensive git commit workflow with proper analysis and validation
 
 **Usage:** Type `/commit` when ready to commit changes.
 
+### `/distill` - Extract Core Concepts
+
+Distills the essential ideas from any source into a concise, well-structured markdown file.
+
+**What it does:**
+- Accepts URLs, images, videos, pasted text, or file paths as input
+- Fetches and reads content (including YouTube transcripts via `youtube_transcript_api`)
+- Identifies the central thesis and 3–7 key principles with ruthless compression
+- Produces a structured `.md` file with a summary, nested concept bullets, and source link
+
+**Usage:** `/distill https://example.com/article` or `/distill` with any attachment or pasted text.
+
 ### `/drawio-to-svg` - Draw.io to SVG Converter
 Converts Draw.io (.drawio) files to SVG format with intelligent batch processing.
 
@@ -126,6 +138,7 @@ claude_code_workflows/
 ├── commands/                      # Slash command templates
 │   ├── CA_init.md                # Codebase analysis workflow
 │   ├── commit.md                 # Git commit workflow
+│   ├── distill.md                # Core concept extractor
 │   ├── drawio-to-svg.md          # Draw.io to SVG converter
 │   └── md-to-pdf.md              # Markdown to PDF converter
 ├── templates/                     # Global templates

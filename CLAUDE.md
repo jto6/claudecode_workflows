@@ -61,6 +61,7 @@ When creating new commands:
 
 - `/CA_init` - Comprehensive codebase analysis initialization
 - `/commit` - Interactive atomic commit workflow with testing
+- `/distill` - Extract core concepts from any source (URL, image, video, or text) into a concise markdown file
 - `/drawio-to-svg` - Convert Draw.io files to SVG format with smart batch processing
 - `/kb-import` - Import files or URLs to create rich markdown knowledge base files
 - `/md-to-pdf` - Convert markdown files to professionally formatted PDFs
