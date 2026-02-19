@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '🔧 Executing: $TOOL_INPUT' | head -c 100"
+            "command": "echo \"🔧 Executing: $TOOL_INPUT\" | head -c 100"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command", 
-            "command": "echo '📝 Processing request in: $CLAUDE_PROJECT_DIR'"
+            "command": "echo \"📝 Processing request in: $CLAUDE_PROJECT_DIR\""
           }
         ]
       }
