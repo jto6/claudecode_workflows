@@ -71,7 +71,7 @@ Flat list of concepts, each with at most one brief clarifying phrase. No nested 
 ```markdown
 # [Concise, descriptive title]
 
-> [One-sentence summary of the central thesis]
+> [One-sentence summary of the central thesis, or a direct quote if the source states it better]
 
 ## Core Concepts
 
@@ -93,7 +93,7 @@ Nested bullet structure showing logical relationships. 3–7 top-level concepts.
 ```markdown
 # [Concise, descriptive title]
 
-> [One-sentence summary of the central thesis]
+> [One-sentence summary of the central thesis, or a direct quote if the source states it better]
 
 ## Core Concepts
 
@@ -128,7 +128,7 @@ Same nested structure as level 2, but:
 ```markdown
 # [Concise, descriptive title]
 
-> [One-sentence summary of the central thesis]
+> [One-sentence summary of the central thesis, or a direct quote if the source states it better]
 
 ## Core Concepts
 
@@ -191,6 +191,27 @@ Same nested structure as level 2, but:
 	- a way of life
 	- not abstractions
 ```
+
+**Direct quote:** When an idea is most powerfully expressed by the source's own words, use the exact quote rather than paraphrasing. Quotes can appear in two places:
+
+*As the thesis summary* — when a single line from the source captures the entire central argument better than any paraphrase:
+```
+> "After a certain age with a certain amount of wealth, continued aggressive
+> saving stops being prudent and starts being a mistake."
+```
+
+*As a child bullet* — when a quote crystallizes a specific concept within the list:
+```
+- the game changes after 60
+	- stop optimizing for maximum wealth at death
+	- "You built wealth for freedom. And then you refuse to be free."
+```
+
+Quote rules:
+- Exact wording only — never paraphrase inside quotes
+- One sentence or clause maximum; trim to the sharpest part if needed
+- No attribution needed — the Source section covers that
+- High bar: most concepts won't have a quote; never add one just to fill space
 
 #### Other rules
 - Do not pad: if a concept has no meaningful sub-points, omit sub-bullets
