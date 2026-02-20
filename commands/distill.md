@@ -2,6 +2,20 @@
 
 Distill the essential ideas from any source (URL, image, video, or text) into a concise, well-structured markdown file.
 
+## Usage
+
+```
+/distill [level] <source>
+```
+
+- `level` — optional integer **1**, **2**, or **3** controlling output depth (default: **2**)
+- `source` — a URL, file path, pasted text, or attachment
+
+**Level meanings:**
+- **1** — Minimal: just the core concepts, each with a single brief description. For material you want to capture but aren't deeply invested in.
+- **2** — Standard (default): ruthlessly compressed nested bullets showing relationships, context, and nuance. 3–7 top-level concepts.
+- **3** — Detailed: more concepts, deeper sub-points, and important examples or anecdotes retained where they meaningfully clarify a concept. For material that is important or exceptionally well-presented.
+
 ## Instructions
 
 The user will provide one or more of:
@@ -9,6 +23,13 @@ The user will provide one or more of:
 - An image attachment (screenshot, slide deck photo, diagram, etc.)
 - A video attachment
 - Pasted text or a file path
+
+### Step 0: Determine the distillation level
+
+Check whether the first argument is a bare integer 1, 2, or 3.
+
+- If it is, record that as the level and treat the remainder as the source.
+- If it is not, default to level 2.
 
 ### Step 1: Ingest the source
 
@@ -35,13 +56,39 @@ If the library is missing, install it first: `pip install youtube-transcript-api
 Analyze the content and extract:
 - The **central thesis or purpose** — what is this fundamentally about?
 - The **key principles, precepts, or arguments** — the load-bearing ideas
-- Any **supporting sub-points** that clarify or nuance the main ideas
-
-Aim for ruthless compression: 3–7 top-level concepts is ideal. Omit examples, anecdotes, filler, and repetition unless they are themselves the point.
+- Any **supporting sub-points**, context, or examples — weighted by the chosen level
 
 ### Step 3: Produce the markdown file
 
-Write a `.md` file with this structure:
+Write a `.md` file whose structure and depth depend on the level:
+
+---
+
+#### Level 1 — Minimal
+
+Flat list of concepts, each with at most one brief clarifying phrase. No nested bullets. No examples. No context notes.
+
+```markdown
+# [Concise, descriptive title]
+
+> [One-sentence summary of the central thesis]
+
+## Core Concepts
+
+- [Concept 1]: [one brief phrase]
+- [Concept 2]: [one brief phrase]
+- [Concept 3]: [one brief phrase]
+
+## Source
+
+[Source title or description](URL or file path)
+```
+
+---
+
+#### Level 2 — Standard (default)
+
+Nested bullet structure showing logical relationships. 3–7 top-level concepts. Omit examples, anecdotes, filler, and repetition unless they are themselves the point.
 
 ```markdown
 # [Concise, descriptive title]
@@ -68,11 +115,44 @@ Write a `.md` file with this structure:
 [Source title or description](URL or file path)
 ```
 
+---
+
+#### Level 3 — Detailed
+
+Same nested structure as level 2, but:
+- Include more top-level concepts (no strict upper limit — cover everything meaningful)
+- Add deeper sub-points where they genuinely clarify
+- Retain important examples or anecdotes as child bullets when they are the clearest way to understand a concept
+- Label retained examples inline: `(example: ...)` or `(e.g. ...)`
+
+```markdown
+# [Concise, descriptive title]
+
+> [One-sentence summary of the central thesis]
+
+## Core Concepts
+
+- [Concept 1]
+	- [sub-point]
+	- [sub-point]
+		- (e.g. [concrete example that illuminates the point])
+- [Concept 2]
+	- [sub-point]
+	- [sub-point]
+		- [deeper elaboration]
+
+## Source
+
+[Source title or description](URL or file path)
+```
+
+---
+
 ### Output rules
 
 #### Structure and hierarchy
 - Use indented bullet levels to show logical relationships — cause→effect, thing→properties, contrast, sequence
-- Maximum 3 levels of indentation
+- Maximum 3 levels of indentation (level 3 output may use all three)
 - No bold on any bullet text — hierarchy and indentation carry the emphasis
 
 #### Bullet length and decomposition
@@ -116,7 +196,7 @@ Write a `.md` file with this structure:
 - Do not pad: if a concept has no meaningful sub-points, omit sub-bullets
 - No blank lines between bullets at any level — the list is continuous
 - Save the file as `[slug-of-title].md` in the current working directory
-- Report the filename and a one-line summary of what was distilled
+- Report the filename, the level used, and a one-line summary of what was distilled
 
 ### Tone
 
