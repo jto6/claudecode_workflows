@@ -12,12 +12,27 @@ CLAUDE_USER_TEMPLATES="$HOME/.claude/templates"
 CLAUDE_USER_HOOKS="$HOME/.claude/hooks"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 
+CLAUDE_SKILLS_VENV="$HOME/.venvs/claude-skills"
+
 echo "🚀 Installing/Updating Claude Code workflows..."
 
 # Create user directories
 mkdir -p "$CLAUDE_USER_COMMANDS"
 mkdir -p "$CLAUDE_USER_TEMPLATES"
 mkdir -p "$CLAUDE_USER_HOOKS"
+
+# Create Python virtual environment for skills dependencies
+if [[ -f "$REPO_PATH/reqs_for_skills.txt" ]]; then
+    if [[ ! -d "$CLAUDE_SKILLS_VENV" ]]; then
+        echo "📦 Creating Python virtual environment for skills..."
+        python3 -m venv "$CLAUDE_SKILLS_VENV"
+        echo "✅ Created venv at $CLAUDE_SKILLS_VENV"
+    else
+        echo "🔄 Updating Python virtual environment for skills..."
+    fi
+    "$CLAUDE_SKILLS_VENV/bin/pip" install --quiet -r "$REPO_PATH/reqs_for_skills.txt"
+    echo "✅ Installed Python dependencies for skills"
+fi
 
 # Create symlinks to commands (so they auto-update with git pulls)
 for cmd_file in "$REPO_PATH/commands"/*.md; do
@@ -88,5 +103,16 @@ echo "  /commit        - Standardized git commit workflow"
 echo "  /drawio-to-svg - Convert Draw.io files to SVG with batch processing"
 echo "  /kb-import     - Import files or URLs to create rich markdown knowledge base files"
 echo "  /md-to-pdf     - Convert markdown files to PDF"
+echo ""
+echo "Python skills venv: $CLAUDE_SKILLS_VENV"
+echo ""
+echo "To make the venv available to claude, add this to your ~/.zshrc:"
+echo ""
+echo '  claude() {'
+echo '      ('
+echo '          source "$HOME/.venvs/claude-skills/bin/activate"'
+echo '          command claude "$@"'
+echo '      )'
+echo '  }'
 echo ""
 echo "To update: cd $(dirname $0) && git pull"
