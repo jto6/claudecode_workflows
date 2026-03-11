@@ -9,6 +9,7 @@ fi
 REPO_PATH="${0:A:h}"
 CLAUDE_USER_COMMANDS="$HOME/.claude/commands"
 CLAUDE_USER_TEMPLATES="$HOME/.claude/templates"
+CLAUDE_USER_HOOKS="$HOME/.claude/hooks"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 
 echo "🚀 Installing/Updating Claude Code workflows..."
@@ -16,6 +17,7 @@ echo "🚀 Installing/Updating Claude Code workflows..."
 # Create user directories
 mkdir -p "$CLAUDE_USER_COMMANDS"
 mkdir -p "$CLAUDE_USER_TEMPLATES"
+mkdir -p "$CLAUDE_USER_HOOKS"
 
 # Create symlinks to commands (so they auto-update with git pulls)
 for cmd_file in "$REPO_PATH/commands"/*.md; do
@@ -45,6 +47,20 @@ if [[ -f "$REPO_PATH/templates/CLAUDE.md" ]]; then
     fi
     ln -sf "$REPO_PATH/templates/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 fi
+
+# Create symlinks to hook scripts (so they auto-update with git pulls)
+for hook_file in "$REPO_PATH/hooks"/*.sh; do
+    if [[ -f "$hook_file" ]]; then
+        hook_name=$(basename "$hook_file")
+        chmod +x "$hook_file"
+        if [[ -L "$CLAUDE_USER_HOOKS/$hook_name" ]]; then
+            echo "🔄 Updated hook: $hook_name"
+        else
+            echo "✅ Linked hook: $hook_name"
+        fi
+        ln -sf "$hook_file" "$CLAUDE_USER_HOOKS/$hook_name"
+    fi
+done
 
 # Merge hooks configuration if settings.json exists
 if [[ -f "$REPO_PATH/hooks/settings_template.json" ]]; then

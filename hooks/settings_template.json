@@ -29,6 +29,10 @@
           {
             "type": "command",
             "command": "echo '✅ File modified - consider running tests'"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/md-lint-post.sh"
           }
         ]
       }
