@@ -17,6 +17,8 @@
       "Bash(which *)",
       "Bash(type *)",
       "Bash(echo *)",
+      "Bash(find *)",
+      "Bash(grep *)",
       "Bash(pwd)",
       "Bash(date)",
       "Bash(env)",
@@ -69,6 +71,10 @@
           {
             "type": "command",
             "command": "echo \"📝 Processing request in: $CLAUDE_PROJECT_DIR\""
+          },
+          {
+            "type": "command",
+            "command": "if [ -z \"$tabtitle\" ]; then dir=$(basename \"$PWD\"); printf '\\033]0;%s\\007' \"$dir\" > /dev/tty; else printf '\\033]0;%s\\007' \"$tabtitle\" > /dev/tty; fi"
           }
         ]
       }
@@ -94,6 +100,10 @@
           {
             "type": "command",
             "command": "paplay /usr/share/sounds/gnome/default/alerts/swing.ogg 2>&1 || afplay /System/Library/Sounds/Glass.aiff 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "if [ -z \"$tabtitle\" ]; then dir=$(basename \"$PWD\"); printf '\\033]0;%s\\007' \"$dir\" > /dev/tty; else printf '\\033]0;%s\\007' \"$tabtitle\" > /dev/tty; fi"
           }
         ]
       }
