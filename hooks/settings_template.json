@@ -1,4 +1,55 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+
+      "Bash(ls)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(file *)",
+      "Bash(which *)",
+      "Bash(type *)",
+      "Bash(echo *)",
+      "Bash(pwd)",
+      "Bash(date)",
+      "Bash(env)",
+      "Bash(printenv *)",
+
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git stash list)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo rm *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(dd *)",
+      "Bash(mkfs *)",
+      "Bash(shred *)",
+      "Bash(pip install --break-system-packages *)",
+      "Bash(pip install * --break-system-packages)",
+      "Bash(pip install * --break-system-packages *)",
+      "Bash(pip3 install --break-system-packages *)",
+      "Bash(pip3 install * --break-system-packages)",
+      "Bash(pip3 install * --break-system-packages *)",
+      "Bash(python* -m pip install --break-system-packages *)",
+      "Bash(python* -m pip install * --break-system-packages)",
+      "Bash(python* -m pip install * --break-system-packages *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -16,7 +67,7 @@
         "matcher": ".*",
         "hooks": [
           {
-            "type": "command", 
+            "type": "command",
             "command": "echo \"📝 Processing request in: $CLAUDE_PROJECT_DIR\""
           }
         ]
@@ -59,20 +110,9 @@
       }
     ]
   },
-  "permissions": {
-    "allowlist": [
-      "Read",
-      "Write", 
-      "Edit",
-      "MultiEdit",
-      "Bash",
-      "Glob",
-      "Grep",
-      "LS",
-      "TodoWrite",
-      "Task",
-      "WebFetch",
-      "WebSearch"
-    ]
+  "alwaysThinkingEnabled": true,
+  "notifications": {
+    "tool_permission_requests": true,
+    "idle_timeout_minutes": 30
   }
 }
