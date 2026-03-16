@@ -1,5 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["//tmp"]
+    }
+  },
   "permissions": {
     "allow": [
       "Read",
@@ -30,7 +35,9 @@
       "Bash(git show *)",
       "Bash(git branch *)",
       "Bash(git remote *)",
-      "Bash(git stash list)"
+      "Bash(git stash list)",
+
+      "Bash(python3 /home/jon/dev/utility-scripts/freeplane/mm2md.py *)"
     ],
     "deny": [
       "Bash(rm -rf *)",
