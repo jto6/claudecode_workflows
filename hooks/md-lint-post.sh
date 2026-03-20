@@ -7,8 +7,12 @@
 
 LINTER="python3 $HOME/dev/utility-scripts/formatting/md-lint.py"
 
-# Extract file_path from the tool input JSON passed via TOOL_INPUT env var.
-FILE_PATH=$(python3 -c "
+# Extract file_path from the tool input JSON passed via TOOL_INPUT env var,
+# or fall back to the first CLI argument (for manual invocation).
+if [[ $# -ge 1 ]]; then
+    FILE_PATH="$1"
+else
+    FILE_PATH=$(python3 -c "
 import json, os, sys
 try:
     inp = json.loads(os.environ.get('TOOL_INPUT', '{}'))
@@ -16,6 +20,7 @@ try:
 except Exception:
     print('')
 ")
+fi
 
 # Only proceed for markdown files.
 if [[ "$FILE_PATH" != *.md && "$FILE_PATH" != *.markdown ]]; then
@@ -35,6 +40,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
     echo ""
     echo "⚠️  md-lint: violations found in $FILE_PATH"
     echo "$OUTPUT"
+    exit 1
 fi
 
 exit 0
