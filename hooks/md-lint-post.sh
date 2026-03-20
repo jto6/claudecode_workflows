@@ -13,10 +13,10 @@ if [[ $# -ge 1 ]]; then
     FILE_PATH="$1"
 else
     FILE_PATH=$(python3 -c "
-import json, os, sys
+import json, sys
 try:
-    inp = json.loads(os.environ.get('TOOL_INPUT', '{}'))
-    print(inp.get('file_path', ''))
+    inp = json.loads(sys.stdin.read() or '{}')
+    print(inp.get('tool_input', {}).get('file_path', ''))
 except Exception:
     print('')
 ")
