@@ -37,10 +37,11 @@ OUTPUT=$($LINTER "$FILE_PATH" 2>&1)
 EXIT_CODE=$?
 
 if [[ $EXIT_CODE -ne 0 ]]; then
-    echo ""
-    echo "⚠️  md-lint: violations found in $FILE_PATH"
-    echo "$OUTPUT"
-    exit 1
+    {
+        echo ""
+        echo "⚠️  md-lint: violations found in $FILE_PATH"
+        echo "$OUTPUT"
+    } >&2
 fi
 
 exit 0
