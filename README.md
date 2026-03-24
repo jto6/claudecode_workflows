@@ -96,6 +96,26 @@ Converts markdown files to professionally formatted PDFs with consistent styling
 
 **Usage:** Type `/md-to-pdf filename.md` to convert any markdown file to PDF.
 
+## Skills
+
+Skills are multi-file AI assistant modules that Claude Code can invoke automatically based on context, or explicitly via `/skill-name`. Unlike single-file slash commands, skills bundle Python modules, templates, and other assets alongside their instructions.
+
+### `/ti-pptx` — TI PowerPoint Generator
+
+Creates professional PowerPoint presentations with Texas Instruments branding.
+
+**What it does:**
+- Generates TI-branded slides using five bundled `.pptx` templates (NDA, MAX, Selective Disclosure variants)
+- Provides `TIPresentationBuilder` Python class for programmatic slide creation
+- Supports title, content, two-column, diagram, and full-image slide layouts
+- Guides through CIP classification, audience, and asset questions before building
+
+**Usage:** `/ti-pptx` or let Claude detect when a presentation is requested.
+
+**Source:** Originally from the [TI AI Tools repository](https://bitbucket.itg.ti.com/projects/TI_AI/repos/util_claude_code_tiai/browse/collaterals/skills/ti-pptx).
+
+---
+
 ## Updating Workflows
 
 To get the latest workflow updates:
@@ -135,12 +155,18 @@ Hooks configuration is in `hooks/settings_template.json` and gets merged with yo
 claude_code_workflows/
 ├── README.md
 ├── install.zsh                    # Installation script
+├── reqs_for_skills.txt            # Python dependencies for skills
 ├── commands/                      # Slash command templates
 │   ├── CA_init.md                # Codebase analysis workflow
 │   ├── commit.md                 # Git commit workflow
 │   ├── distill.md                # Core concept extractor
 │   ├── drawio-to-svg.md          # Draw.io to SVG converter
 │   └── md-to-pdf.md              # Markdown to PDF converter
+├── skills/                        # AI assistant skill modules
+│   └── ti-pptx/                  # TI PowerPoint generation skill
+│       ├── SKILL.md
+│       ├── pptx_builder.py
+│       └── templates/            # TI-branded .pptx template files
 ├── templates/                     # Global templates
 │   └── CLAUDE.md                 # Global Claude Code instructions
 ├── css/                          # Styling templates

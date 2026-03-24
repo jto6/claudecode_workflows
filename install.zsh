@@ -10,6 +10,7 @@ REPO_PATH="${0:A:h}"
 CLAUDE_USER_COMMANDS="$HOME/.claude/commands"
 CLAUDE_USER_TEMPLATES="$HOME/.claude/templates"
 CLAUDE_USER_HOOKS="$HOME/.claude/hooks"
+CLAUDE_USER_SKILLS="$HOME/.claude/skills"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 
 CLAUDE_SKILLS_VENV="$HOME/.venvs/claude-skills"
@@ -20,6 +21,7 @@ echo "🚀 Installing/Updating Claude Code workflows..."
 mkdir -p "$CLAUDE_USER_COMMANDS"
 mkdir -p "$CLAUDE_USER_TEMPLATES"
 mkdir -p "$CLAUDE_USER_HOOKS"
+mkdir -p "$CLAUDE_USER_SKILLS"
 
 # Create Python virtual environment for skills dependencies
 if [[ -f "$REPO_PATH/reqs_for_skills.txt" ]]; then
@@ -92,6 +94,24 @@ if [[ -f "$REPO_PATH/hooks/settings_template.json" ]]; then
     fi
 fi
 
+# Create symlinks to skills (directories, so they auto-update with git pulls)
+for skill_dir in "$REPO_PATH/skills"/*/; do
+    if [[ -d "$skill_dir" ]]; then
+        skill_name=$(basename "$skill_dir")
+        target="$CLAUDE_USER_SKILLS/$skill_name"
+        if [[ -d "$target" && ! -L "$target" ]]; then
+            mv "$target" "${target}.backup"
+            echo "⚠️  Backed up existing $skill_name/ to ${target}.backup"
+        fi
+        ln -sfn "$skill_dir" "$target"
+        if [[ -L "$target" ]]; then
+            echo "🔄 Updated skill: $skill_name"
+        else
+            echo "✅ Linked skill: $skill_name"
+        fi
+    fi
+done
+
 echo ""
 echo "🎉 Claude Code workflows updated successfully!"
 echo ""
@@ -107,6 +127,9 @@ echo "  /drawio-to-svg - Convert Draw.io files to SVG with batch processing"
 echo "  /kb-import     - Import files or URLs to create rich markdown knowledge base files"
 echo "  /md-to-pdf     - Convert markdown files to PDF"
 echo "  /text-clean    - Rewrite text for grammar, clarity, and conciseness"
+echo ""
+echo "Available skills:"
+echo "  /ti-pptx       - Create TI-branded PowerPoint presentations"
 echo ""
 echo "Python skills venv: $CLAUDE_SKILLS_VENV"
 echo ""
