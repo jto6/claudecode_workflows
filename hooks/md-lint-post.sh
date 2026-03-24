@@ -7,7 +7,7 @@
 
 LINTER="python3 $HOME/dev/utility-scripts/formatting/md-lint.py"
 
-# Extract file_path from the tool input JSON passed via TOOL_INPUT env var,
+# Extract file_path from the tool input JSON delivered via stdin by Claude Code,
 # or fall back to the first CLI argument (for manual invocation).
 if [[ $# -ge 1 ]]; then
     FILE_PATH="$1"
