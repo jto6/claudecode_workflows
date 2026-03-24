@@ -37,6 +37,70 @@ For this result
 
 - Text containing `itg` is the enterprise domain. Use default package location
 
+## Source-of-Truth Protocol: Creating vs. Updating
+
+**This is the most important rule of this skill.**
+
+### The existing PPTX file is always the source of truth
+
+Once a presentation has been created and the user has worked with it, the `.pptx` file on disk is the authoritative version. It may contain layout adjustments, formatting changes, image placements, and other manual edits that exist nowhere in any Python script. Those edits must never be lost.
+
+**NEVER regenerate or overwrite an existing presentation from a Python script.** Any Python build scripts used to scaffold the initial version are temporary scaffolding — discard them after the first build.
+
+### Decision: Creating vs. Updating
+
+Before writing any code, ask: **does this file already exist?**
+
+- **File does not exist** → Create it fresh using `TIPresentationBuilder` (see steps below)
+- **File already exists** → Open the existing file with `python-pptx` directly and make targeted changes only
+
+### Updating an existing presentation
+
+When asked to add, modify, or remove slides from an existing `.pptx`:
+
+1. Open the file with `python-pptx` directly — **do not** use `TIPresentationBuilder` with that file as a template, as this may trigger append behavior
+2. Make only the targeted change (add a slide, edit text in a specific slide, etc.)
+3. Find slides by title text, not by index — slide order may have changed since the file was generated
+4. Save back to the same path
+5. Never restore from a baseline or earlier version before making changes
+
+```python
+from pptx import Presentation
+from pptx.util import Pt
+from pathlib import Path
+
+pptx_path = Path("/path/to/existing.pptx")
+prs = Presentation(str(pptx_path))
+
+# Find slide by title
+def find_slide_by_title(prs, title_text):
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if shape.has_text_frame and shape.shape_type == 13:  # title placeholder
+                if title_text.lower() in shape.text.lower():
+                    return slide
+            if hasattr(shape, "placeholder_format") and shape.placeholder_format:
+                if shape.placeholder_format.idx == 0:  # title placeholder
+                    if title_text.lower() in shape.text.lower():
+                        return slide
+    return None
+
+slide = find_slide_by_title(prs, "CCC Signing Architectures")
+# ... modify slide content ...
+
+prs.save(str(pptx_path))
+print(f"✓ Saved {prs.slides.__len__()} slides to {pptx_path}")
+```
+
+### What not to do
+
+- **Do not** run a build script that regenerates slides from scratch when the file already exists
+- **Do not** restore from a git baseline or backup before making changes
+- **Do not** use `custom_template` pointing to the existing file if the intent is to modify it — this appends slides rather than editing in place
+- **Do not** assume slide indices are stable — always find slides by title
+
+---
+
 ## User Interaction Flow
 
 When a user requests to create a PowerPoint presentation, follow these steps:
