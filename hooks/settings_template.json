@@ -37,7 +37,11 @@
       "Bash(git remote *)",
       "Bash(git stash list)",
 
-      "Bash(python3 /home/jon/dev/utility-scripts/freeplane/mm2md.py *)"
+      "Bash(python3 /home/jon/dev/utility-scripts/freeplane/mm2md.py *)",
+
+      "Write(/tmp/*)",
+      "Bash(yt-dlp *)",
+      "Bash(python3 -c *)"
     ],
     "deny": [
       "Bash(rm -rf *)",
