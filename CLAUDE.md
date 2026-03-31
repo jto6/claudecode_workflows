@@ -25,10 +25,13 @@ Skills are multi-file AI assistant modules in the `skills/` directory. Each skil
 
 ```
 skills/
-└── ti-pptx/            # /ti-pptx skill
+├── ti-pptx/            # ti-pptx skill
+│   ├── SKILL.md
+│   ├── pptx_builder.py
+│   └── templates/
+└── vdk-tda54/          # vdk-tda54 skill
     ├── SKILL.md
-    ├── pptx_builder.py
-    └── templates/
+    └── simprobe_boot_template.py
 ```
 
 ### Command File Format
@@ -94,3 +97,5 @@ See individual command files in `commands/` directory for detailed usage instruc
 
 - `/ti-pptx` - Create TI-branded PowerPoint presentations using bundled templates and `TIPresentationBuilder`
   (originally from [TI AI Tools repo](https://bitbucket.itg.ti.com/projects/TI_AI/repos/util_claude_code_tiai/browse/collaterals/skills/ti-pptx))
+- `vdk-tda54` - Operate the TDA54 Synopsys Virtualizer VDK simulation: launch simulations, monitor UART
+  output, configure core reset via simprobe, attach TRACE32/GDB debuggers, and SSH into the Linux guest

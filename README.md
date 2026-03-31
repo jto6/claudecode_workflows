@@ -5,8 +5,9 @@ Standardized Claude Code commands and workflows for consistent development pract
 ## Overview
 
 This repository provides:
+
 - **Custom slash commands** for common development workflows
-- **Hooks configuration** for enhanced Claude Code behavior  
+- **Hooks configuration** for enhanced Claude Code behavior
 - **Auto-updating templates** that stay current with git pulls
 
 ## Installation
@@ -34,6 +35,7 @@ chmod +x install.zsh
 Initializes a thorough analysis of any codebase by creating a structured `code_analysis.md` file.
 
 **What it does:**
+
 - High-level architecture survey
 - Component mapping and dependencies
 - Technology stack identification
@@ -48,6 +50,7 @@ Initializes a thorough analysis of any codebase by creating a structured `code_a
 Executes a comprehensive git commit workflow with proper analysis and validation.
 
 **What it does:**
+
 - Pre-commit analysis (status, diffs, history)
 - Code quality checks (linting, type checking, tests)
 - Commit message analysis and formatting
@@ -62,6 +65,7 @@ Executes a comprehensive git commit workflow with proper analysis and validation
 Distills the essential ideas from any source into a concise, well-structured markdown file.
 
 **What it does:**
+
 - Accepts URLs, images, videos, pasted text, or file paths as input
 - Fetches and reads content (including YouTube transcripts via `youtube_transcript_api`)
 - Identifies the central thesis and 3–7 key principles with ruthless compression
@@ -73,21 +77,24 @@ Distills the essential ideas from any source into a concise, well-structured mar
 Converts Draw.io (.drawio) files to SVG format with intelligent batch processing.
 
 **What it does:**
+
 - Converts individual .drawio files to .svg in the same directory
 - Batch processes directories, only converting when needed (missing or outdated SVG files)
 - Repository-wide search when no arguments provided
 - Smart file comparison based on modification timestamps
 - Comprehensive error handling and progress feedback
 
-**Usage:** 
+**Usage:**
+
 - Single file: `/drawio-to-svg diagram.drawio`
-- Directory: `/drawio-to-svg docs/diagrams/`  
+- Directory: `/drawio-to-svg docs/diagrams/`
 - Repository-wide: `/drawio-to-svg`
 
 ### `/md-to-pdf` - Markdown to PDF Converter
 Converts markdown files to professionally formatted PDFs with consistent styling.
 
 **What it does:**
+
 - Converts markdown to PDF using pandoc and wkhtmltopdf
 - Automatically detects and uses appropriate CSS styling
 - Applies Times New Roman font with proper margins
@@ -105,6 +112,7 @@ Skills are multi-file AI assistant modules that Claude Code can invoke automatic
 Creates professional PowerPoint presentations with Texas Instruments branding.
 
 **What it does:**
+
 - Generates TI-branded slides using five bundled `.pptx` templates (NDA, MAX, Selective Disclosure variants)
 - Provides `TIPresentationBuilder` Python class for programmatic slide creation
 - Supports title, content, two-column, diagram, and full-image slide layouts
@@ -113,6 +121,21 @@ Creates professional PowerPoint presentations with Texas Instruments branding.
 **Usage:** `/ti-pptx` or let Claude detect when a presentation is requested.
 
 **Source:** Originally from the [TI AI Tools repository](https://bitbucket.itg.ti.com/projects/TI_AI/repos/util_claude_code_tiai/browse/collaterals/skills/ti-pptx).
+
+### `vdk-tda54` — TDA54 VDK Simulation Guide
+
+Encodes domain knowledge for operating the TDA54 Synopsys Virtualizer simulation inside the TI SDK Docker container.
+
+**What it does:**
+
+- Constructs correct `tda54-build vs <vpconfig>` invocations for any VP configuration
+- Guides UART output monitoring via `simout.txt` and UART PHY terminals
+- Advises on core reset configuration via `boot_configure.py` simprobe scripts
+- Guides TRACE32 and GDB debug connection setup per VPConfig Debug tab
+- Explains SSH access into the Linux guest via VIRTIO_ETHERNET port forwarding
+- Bundles a `simprobe_boot_template.py` for generating correct boot configuration scripts
+
+**Usage:** Invoke `vdk-tda54` skill or mention VDK-related keywords (vdk, vpconfig, virtualizer, simout, trace32, boot configure).
 
 ---
 
@@ -126,14 +149,16 @@ git pull
 ```
 
 The install script is safe to re-run - it will:
+
 - Update all command symlinks to the latest versions
-- Refresh the global CLAUDE.md instructions  
+- Refresh the global CLAUDE.md instructions
 - Merge any new hooks configuration
 - Show what was updated vs newly installed
 
 ## Configuration
 
 The workflows install hooks that provide:
+
 - **Tool execution feedback** - Shows what commands are being run
 - **File modification alerts** - Reminds to run tests after edits
 - **Session context** - Displays current project directory
@@ -141,6 +166,7 @@ The workflows install hooks that provide:
 ### Global Instructions
 
 The installer creates `~/.claude/CLAUDE.md` with global instructions that teach Claude Code to:
+
 - **Check for slash commands** before executing them as bash commands
 - **Read command definitions** from `~/.claude/commands/` directory
 - **Understand the difference** between Claude Code slash commands and bash commands
@@ -163,10 +189,13 @@ claude_code_workflows/
 │   ├── drawio-to-svg.md          # Draw.io to SVG converter
 │   └── md-to-pdf.md              # Markdown to PDF converter
 ├── skills/                        # AI assistant skill modules
-│   └── ti-pptx/                  # TI PowerPoint generation skill
+│   ├── ti-pptx/                  # TI PowerPoint generation skill
+│   │   ├── SKILL.md
+│   │   ├── pptx_builder.py
+│   │   └── templates/            # TI-branded .pptx template files
+│   └── vdk-tda54/                # TDA54 VDK simulation skill
 │       ├── SKILL.md
-│       ├── pptx_builder.py
-│       └── templates/            # TI-branded .pptx template files
+│       └── simprobe_boot_template.py
 ├── templates/                     # Global templates
 │   └── CLAUDE.md                 # Global Claude Code instructions
 ├── css/                          # Styling templates
@@ -212,7 +241,7 @@ Detailed instructions for Claude Code to execute...
 - Verify symlinks exist: `ls -la ~/.claude/commands/`
 - Check Claude Code is reading user commands: `claude config get`
 
-### Hooks Not Working  
+### Hooks Not Working
 - Verify settings merge: `cat ~/.claude/settings.json`
 - Check for JSON syntax errors with: `jq . ~/.claude/settings.json`
 
