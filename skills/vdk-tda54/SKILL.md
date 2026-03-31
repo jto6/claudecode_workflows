@@ -227,11 +227,14 @@ Key flags:
 
 - `-d <workspace_root>`: the workspace ROOT directory (containing project subdirs), e.g.
   `/work/ti-sdk/workspace` — NOT the project subdirectory itself
-- `--vdk_test null,<vpconfig>,<script>`: `null` as the first field opens the vpconfig directly;
-  `<vpconfig>` can be the config name (looked up in workspace) or a full path to a `.vpcfg` file
+- `--vdk_test null,<vpconfig>,<script>`: `null` as the first field; `<vpconfig>` must be an
+  absolute path to a `.vpcfg` file (bare name lookup only works when the project name is given
+  instead of `null`)
 - `--pyout`: where to write the test script's stdout/stderr
 - `--logfile`: where to write the Virtualizer system log (similar to simout.txt)
-- `--pyargs ... --pyargs_end`: arguments forwarded to `sys.argv` of the test script
+- `--pyargs <script_name> <args...> --pyargs_end`: vssh inserts these tokens verbatim into
+  the test script's `sys.argv`. **The first token must be a "program name"** (e.g. the script
+  filename) so that `parse_args()` processes from `sys.argv[1:]` as expected
 
 ### Test Script Lifecycle
 
@@ -323,11 +326,15 @@ cp ~/.claude/skills/vdk-tda54/vssh_linux_test.py \
 Then run (from host, `tda54-build` wraps the container invocation):
 
 ```zsh
+VPCFG=/work/ti-sdk/workspace/TDA_R8/vpconfigs/Mini_AArch64_Linux/Mini_AArch64_Linux.vpcfg
+SCRIPT=/work/ti-sdk/workspace/TDA_R8/tests/vssh_linux_test.py
+
 tda54-build vssh -d /work/ti-sdk/workspace \
-    --vdk_test null,Mini_AArch64_Linux,/work/ti-sdk/workspace/TDA_R8/tests/vssh_linux_test.py \
+    --vdk_test "null,${VPCFG},${SCRIPT}" \
     --pyout /work/ti-sdk/workspace/TDA_R8/bin/sim_python.log \
     --logfile /work/ti-sdk/workspace/TDA_R8/bin/sim_vs.log \
     --pyargs \
+        vssh_linux_test.py \
         --commands "uname -a" "cat /proc/cpuinfo | head -20" "ls /proc" \
         --uart_log /work/ti-sdk/workspace/TDA_R8/bin/uart_tx.log \
         --boot_timeout 600 \
@@ -506,11 +513,14 @@ access to host files at runtime. Configure in VPConfig → Parameters → VIRTIO
    ```
 2. Run from the host (no DISPLAY needed):
    ```zsh
+   VPCFG=/work/ti-sdk/workspace/TDA_R8/vpconfigs/Mini_AArch64_Linux/Mini_AArch64_Linux.vpcfg
+   SCRIPT=/work/ti-sdk/workspace/TDA_R8/tests/vssh_linux_test.py
    tda54-build vssh -d /work/ti-sdk/workspace \
-       --vdk_test null,Mini_AArch64_Linux,/work/ti-sdk/workspace/TDA_R8/tests/vssh_linux_test.py \
+       --vdk_test "null,${VPCFG},${SCRIPT}" \
        --pyout /work/ti-sdk/workspace/TDA_R8/bin/sim_python.log \
        --logfile /work/ti-sdk/workspace/TDA_R8/bin/sim_vs.log \
        --pyargs \
+           vssh_linux_test.py \
            --commands "uname -a" "cat /proc/version" \
            --uart_log /work/ti-sdk/workspace/TDA_R8/bin/uart_tx.log \
            --boot_timeout 600 \

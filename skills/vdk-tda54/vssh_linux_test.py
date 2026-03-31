@@ -17,15 +17,25 @@ Usage — pass these after --pyargs in the vssh invocation:
 
 Example vssh invocation (run via tda54-build inside the container):
 
+    VPCFG=/work/ti-sdk/workspace/TDA_R8/vpconfigs/Mini_AArch64_Linux/Mini_AArch64_Linux.vpcfg
+    SCRIPT=/work/ti-sdk/workspace/TDA_R8/tests/vssh_linux_test.py
     tda54-build vssh -d /work/ti-sdk/workspace \\
-        --vdk_test null,Mini_AArch64_Linux,/work/ti-sdk/workspace/TDA_R8/tests/vssh_linux_test.py \\
+        --vdk_test "null,${VPCFG},${SCRIPT}" \\
         --pyout /work/ti-sdk/workspace/TDA_R8/bin/sim_python.log \\
         --logfile /work/ti-sdk/workspace/TDA_R8/bin/sim_vs.log \\
         --pyargs \\
+            vssh_linux_test.py \\
             --commands "uname -a" "cat /proc/cpuinfo | head -20" "ls /proc" \\
             --uart_log /work/ti-sdk/workspace/TDA_R8/bin/uart_tx.log \\
             --boot_timeout 600 \\
         --pyargs_end
+
+IMPORTANT: vssh puts --pyargs tokens verbatim into sys.argv with no script name prepended.
+The first --pyargs token (vssh_linux_test.py above) is sys.argv[0]; parse_args() reads from
+sys.argv[1:]. Omitting this causes parse_args() to consume the first flag as the program name.
+
+The vpconfig must be an absolute path when using null as the project; bare name lookup only
+works when a real project directory name is given as the --vdk_test first field.
 
 The --pyout log shows PASS/FAIL markers from report()/report_error().
 The --uart_log file captures all raw UART TX bytes (everything the SoC sent).
