@@ -23,6 +23,36 @@ The TDA54 VDK (Virtual Development Kit) is a Synopsys Virtualizer-based full-SoC
 the TI TDA54 automotive SoC. It enables software development, integration testing, and debug
 before hardware is available.
 
+## Available Documentation
+
+All VDK documentation PDFs are on the local filesystem and readable directly with the `Read`
+tool. They live in both workspace installations (R8 and R9 have the same set):
+
+- Host path: `/home/jon/dev/tijsdk/ti-sdk/workspace/<WS_NAME>/Documentation/pdf/`
+- Container path: `/work/ti-sdk/workspace/<WS_NAME>/Documentation/pdf/`
+
+**Primary VDK docs** (use these first):
+
+- `TI_TDA5_VDK_UserGuide.pdf` — main reference: vpconfig parameters, UART/debug setup,
+  simprobe scripting, boot configuration, SSH, FileIO, vssh headless mode
+- `TI_TDA5_VDK_FAQ.pdf` — common problems and solutions
+- `TI_TDA5_TLM2_IP_UserGuide.pdf` — TLM2 IP model API reference
+- `TI_TDA5_VDK_ReleaseNotes.pdf` — what changed between SDK releases
+- `TI_TDA5_ExtensibleVDK_Install.pdf` / `TI_TDA5_FixedVDK_Install.pdf` — installation guides
+
+**Peripheral IP model docs** (`Misc/` subdirectory):
+
+- `IP_UART_PHY.pdf` — PL011 UART SCML parameters (TCP redirect, file logging, terminal)
+- `IP_DW_APB_UART_SC.pdf` — DW APB UART (MCU domain DW_UART_PHY instances)
+- `IP_DWC_DDR5_MCTL.pdf`, `IP_DWC_dptx.pdf`, `IP_DWC_i2c.pdf`, `IP_DWC_MIPI_I3C.pdf`
+- `IP_DWC_PCIE_LCA.pdf`, `IP_DWC_ssi_gen2.pdf`, `IP_DWC_ufs40_host_controller.pdf`
+- `IP_DWC_usb31.pdf`, `IP_DWC_VIRTIO_GPU.pdf`, `IP_ETH_PHY.pdf`, `IP_EthExternalBlock.pdf`
+- `IP_AdvancedCSI2CameraV4Device.pdf`, `IP_VHubUserGuide.pdf`
+- `C7xHostEmulation.pdf`, `Switchable_CPU_Model.pdf`, `CPSW_Platform_Test.pdf`
+
+For large PDFs, read the table of contents first (pages 1–3) to identify the right page range,
+then read the relevant section (max 20 pages per Read call).
+
 ## Overview
 
 The VDK runs inside a TI SDK Docker container and is accessed through the `tda54-build` shell
