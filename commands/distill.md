@@ -5,31 +5,36 @@ Distill the essential ideas from any source (URL, image, video, or text) into a 
 ## Usage
 
 ```
-/distill [level] <source>
+/distill [level | -quotes] <source>
 ```
 
 - `level` — optional integer **1**, **2**, or **3** controlling output depth (default: **2**)
+- `-quotes` — optional flag; extracts the most powerful exact quotes and organizes them by theme
 - `source` — a URL, file path, pasted text, or attachment
 
 **Level meanings:**
+
 - **1** — Minimal: just the core concepts, each with a single brief description. For material you want to capture but aren't deeply invested in.
 - **2** — Standard (default): ruthlessly compressed nested bullets showing relationships, context, and nuance. 3–7 top-level concepts.
 - **3** — Detailed: more concepts, deeper sub-points, and important examples or anecdotes retained where they meaningfully clarify a concept. For material that is important or exceptionally well-presented.
+- **-quotes** — Key quotes: extract the most impactful exact quotes from the source and organize them under descriptive thematic headings.
 
 ## Instructions
 
 The user will provide one or more of:
+
 - A URL (article, blog post, YouTube video, documentation page, etc.)
 - An image attachment (screenshot, slide deck photo, diagram, etc.)
 - A video attachment
 - Pasted text or a file path
 
-### Step 0: Determine the distillation level
+### Step 0: Determine the distillation mode
 
-Check whether the first argument is a bare integer 1, 2, or 3.
+Check whether the first argument is a bare integer 1, 2, or 3, or the flag `-quotes`.
 
-- If it is, record that as the level and treat the remainder as the source.
-- If it is not, default to level 2.
+- If it is `-quotes`, set mode to **quotes** and treat the remainder as the source. Skip Steps 2–3 and proceed to Step 4 after ingestion.
+- If it is a bare integer 1, 2, or 3, record that as the level and treat the remainder as the source.
+- If it is none of the above, default to level 2.
 
 ### Step 1: Ingest the source
 
@@ -54,6 +59,7 @@ If the library is missing, install it first: `pip install youtube-transcript-api
 ### Step 2: Identify core concepts
 
 Analyze the content and extract:
+
 - The **central thesis or purpose** — what is this fundamentally about?
 - The **key principles, precepts, or arguments** — the load-bearing ideas
 - Any **supporting sub-points**, context, or examples — weighted by the chosen level
@@ -120,6 +126,7 @@ Nested bullet structure showing logical relationships. 3–7 top-level concepts.
 #### Level 3 — Detailed
 
 Same nested structure as level 2, but:
+
 - Include more top-level concepts (no strict upper limit — cover everything meaningful)
 - Add deeper sub-points where they genuinely clarify
 - Retain important examples or anecdotes as child bullets when they are the clearest way to understand a concept
@@ -208,6 +215,7 @@ Same nested structure as level 2, but:
 ```
 
 Quote rules:
+
 - Exact wording only — never paraphrase inside quotes
 - One sentence or clause maximum; trim to the sharpest part if needed
 - No attribution needed — the Source section covers that
@@ -222,3 +230,47 @@ Quote rules:
 ### Tone
 
 Direct. No hedging, no "the author argues that...". State the ideas as facts.
+
+---
+
+### Step 4: Quotes mode (`-quotes`)
+
+Use this step only when `-quotes` was set in Step 0. After ingesting the source (Step 1), skip Steps 2–3 and produce the output here instead.
+
+#### Extraction rules
+
+- **Exact wording.** Use the source's own words. Never paraphrase or reword a quote.
+- **Standalone impact.** Each quote should resonate on its own, without needing surrounding context to make sense.
+- **Turning points preferred.** Favor quotes that capture a shift in understanding, a revelation, a conviction, or a core insight.
+- **Ruthlessly selective.** Only the most significant, motivating, and impactful quotes. For a short piece (under 5 minutes / 1 page), expect 2–4 quotes total. For a long piece (30+ minutes / 10+ pages), expect 5–10 quotes total — not dozens. Most of the source material will not produce a quote worth keeping. If a quote doesn't stop you in your tracks, leave it out.
+
+#### Organization rules
+
+- **Thematic headings.** Group quotes under descriptive headings that capture the arc or essence of the group — not just a topic label. A good heading tells the reader what these quotes, taken together, reveal.
+- **Commentary when it helps.** If a brief explanation or commentary on the heading genuinely clarifies the key idea, core principle, or why these quotes belong together, include it. Do not add commentary by default — only when it earns its place.
+
+#### Output format
+
+```markdown
+# [Concise, descriptive title] — Key Quotes
+
+- [Thematic heading 1]
+	- "[exact quote]"
+	- "[exact quote]"
+- [Thematic heading 2]
+	- [brief commentary if it clarifies the theme]
+	- "[exact quote]"
+
+## Source
+
+[Source title or description](URL or file path)
+```
+
+#### Output rules
+
+- Save the file as `[slug-of-title]-quotes.md` in the current working directory
+- Report the filename and a one-line summary of what was extracted
+- **Wrap every quote in double quotes** (`"..."`) so quotes are visually distinct from commentary and headings
+- No bold on quote text — let the words speak for themselves
+- No blank lines between bullets at any level
+- No attribution on individual quotes — the Source section covers that
