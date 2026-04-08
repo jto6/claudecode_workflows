@@ -249,28 +249,66 @@ template_path = Path.home() / ".claude/skills/ti-pptx/templates/Presentation1_ND
 
 ## TI Branding Guidelines
 
-### Color Palette
+### Official Color Palette (Source: TI Color and Design Guide 2024-08-05)
 
-- **TI Red**: RGB(204, 0, 0) - Primary brand color for accents
-- **TI Blue**: RGB(0, 51, 141) - Dark blue for highlights and emphasis
-- **TI Gray**: RGB(51, 51, 51) - Dark gray for body text
-- **TI Light Gray**: RGB(128, 128, 128) - Secondary text
+**Primary colors:**
+
+| Name                   | Hex       | `TIColors` constant | Usage                                    |
+|------------------------|-----------|---------------------|------------------------------------------|
+| Texas Instruments Red  | `#CC0000` | `RED`               | Primary brand — large areas, headers     |
+| Process Black          | `#000000` | `BLACK`             | Body text, strong contrast               |
+| Texas Instruments Gray | `#AAAAAA` | `GRAY`              | Secondary text, borders                  |
+| Process White          | `#FFFFFF` | `WHITE`             | Backgrounds, text on dark fills          |
+
+**Secondary colors:**
+
+| Name        | Hex       | `TIColors` constant | Usage                                       |
+|-------------|-----------|---------------------|---------------------------------------------|
+| Dark Red    | `#990000` | `DARK_RED`          | Dark accent, headers on dark backgrounds    |
+| Dark Teal   | `#115566` | `DARK_TEAL`         | Section headers, dark card fills            |
+| Teal        | `#007C8C` | `TEAL`              | Accent — use sparingly                      |
+| Bright Cyan | `#00BBCC` | `BRIGHT_CYAN`       | Small highlights only                       |
+| Light Gray  | `#E0E0E0` | `LIGHT_GRAY`        | Card backgrounds, borders                   |
+
+**Brand usage rules:**
+
+1. **Embrace red** — RED / DARK_RED can fill large areas and headers
+2. **Red + White** together for high-contrast large-area layouts
+3. **Teal sparingly** — "a little teal goes a long way"
+4. **Lines and borders** are encouraged — consistent with TI design style
+5. **Do NOT use `#00338D`** (dark blue) — it is not in the official TI palette
+
+**IMPORTANT:** All colors in generated slides MUST come from `builder.colors.*` (which maps to `TIColors`). Do not use raw `RGBColor()` values. If you need a color not in `TIColors`, ask the user.
 
 ### Typography
 
-- **Title Fonts**: 22-24pt, bold
-- **Section Headers**: 16-18pt, bold, often with TI Blue
-- **Body Text**: 12-14pt
-- **Sub-bullets**: 11-12pt
-- **Captions**: 10-11pt
+Font sizes are available as `builder.fonts.*` constants (maps to `TIFonts`):
+
+| Constant      | Size | Usage                               |
+|---------------|------|-------------------------------------|
+| `TITLE`       | 22pt | Slide titles                        |
+| `SUBTITLE`    | 16pt | Subtitles                           |
+| `SECTION`     | 16pt | Section headers within a slide      |
+| `BODY`        | 12pt | Body text                           |
+| `SMALL_BODY`  | 11pt | Sub-bullets, secondary body         |
+| `SMALL`       | 10pt | Captions, card labels               |
+| `LABEL`       | 9pt  | Fine print, annotations             |
+
+**IMPORTANT:** All font sizes in generated slides MUST come from `builder.fonts.*`. Do not use raw `Pt()` values.
 
 ### Layout Best Practices
 
 1. **Concise Content**: Avoid overcrowding slides
 2. **Visual Balance**: Mix text and images
-3. **Consistent Headers**: Use blue/red for emphasis
+3. **Consistent Headers**: Use red family or dark teal for emphasis
 4. **White Space**: Don't fill every pixel
 5. **Font Sizing**: Ensure readability (no content in footer area)
+
+### When to Use Which Slide Type
+
+- **Bullet-heavy informational slides** (agendas, status updates, feature lists) — use `add_content_slide()`, `add_two_column_slide()` for fast, consistent results
+- **Spatial / graphical layouts** (motivation stories, architecture overviews, visual narratives, comparison matrices) — use `add_freeform_slide()` with shape helpers for full layout control
+- Both approaches inherit TI branding from the template slide master (footer, logo, background)
 
 ## Python Module: pptx_builder
 
@@ -585,6 +623,44 @@ builder.add_image_slide(
 )
 ```
 
+### 6. Freeform Slide
+
+**Use**: Spatial/graphical layouts — motivation stories, architecture overviews, visual narratives, comparison matrices
+**Layout**: Template layout [7] - "Title Only" (or any layout name)
+
+```python
+# Get a branded slide with full layout control
+slide = builder.add_freeform_slide(title="Why sdv-compose?")
+
+# Place boxes, lines, and text using brand constants
+builder.add_branded_box(
+    slide, left=Emu(256032), top=Emu(548640),
+    width=Emu(4187952), height=Emu(1310640),
+    fill_color=builder.colors.DARK_TEAL,
+    text="THE PREMISE",
+    font_size=builder.fonts.SECTION,
+    font_color=builder.colors.WHITE,
+    bold=True
+)
+
+builder.add_accent_line(
+    slide, left=Emu(256032), top=Emu(475488),
+    width=Emu(8631936),
+    color=builder.colors.RED
+)
+
+tf = builder.add_text_box(
+    slide, left=Emu(256032), top=Emu(4900000),
+    width=Emu(8631936), height=Emu(200000),
+    text="Tagline text here",
+    font_size=builder.fonts.SMALL,
+    font_color=builder.colors.DARK_TEAL,
+    bold=True, alignment=PP_ALIGN.CENTER
+)
+```
+
+**Brand compliance rule**: ALL colors must come from `builder.colors.*` and ALL font sizes from `builder.fonts.*`. Do not use raw `RGBColor()` or `Pt()` values.
+
 ## Best Practices
 
 ### Content Guidelines
@@ -592,7 +668,7 @@ builder.add_image_slide(
 1. **One Idea Per Slide**: Don't overload
 2. **6x6 Rule**: Max 6 bullets, 6 words per bullet (guideline)
 3. **Visual Hierarchy**: Use indentation and colors
-4. **Highlight Key Points**: Use TI Blue for emphasis
+4. **Highlight Key Points**: Use TI Red or Dark Teal for emphasis
 5. **Consistent Style**: Same font sizes across slides
 6. **ASCII Diagram Limit**: Keep diagrams to 10 lines or less to avoid footer overflow
 

@@ -4,19 +4,75 @@ Core module for creating TI-branded PowerPoint presentations
 """
 
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
+from pptx.util import Inches, Pt, Emu
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.dml.color import RGBColor
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict, Any
 from dataclasses import dataclass
 import os
 
-# TI Brand Colors
-TI_RED = RGBColor(204, 0, 0)
-TI_BLUE = RGBColor(0, 51, 141)
-TI_DARK_GRAY = RGBColor(51, 51, 51)
-TI_LIGHT_GRAY = RGBColor(128, 128, 128)
+
+# ──────────────────────────────────────────────────────────────
+# Official TI Brand Color Palette
+# Source: TI Color and Design Guide (2024-08-05)
+# ──────────────────────────────────────────────────────────────
+
+class TIColors:
+    """Official TI corporate color palette.
+
+    Usage rules (from TI Brand Guide):
+      - Embrace red — RED / DARK_RED can fill large areas and headers.
+      - RED + WHITE together for high-contrast, large-area layouts.
+      - Teal family used sparingly — "a little teal goes a long way."
+      - Lines and borders are encouraged — consistent with TI design style.
+
+    IMPORTANT: Do not use colors outside this palette in TI-branded
+    presentations. If you need a color not listed here, ask the user.
+    """
+
+    # Primary colors
+    RED         = RGBColor(0xCC, 0x00, 0x00)  # TI Red (PMS 3546C) — primary brand
+    BLACK       = RGBColor(0x00, 0x00, 0x00)  # Process Black
+    GRAY        = RGBColor(0xAA, 0xAA, 0xAA)  # TI Gray (PMS Cool Gray 8C)
+    WHITE       = RGBColor(0xFF, 0xFF, 0xFF)  # Process White
+
+    # Secondary colors
+    DARK_RED    = RGBColor(0x99, 0x00, 0x00)  # PMS 1807 — dark accent, headers on dark bg
+    DARK_TEAL   = RGBColor(0x11, 0x55, 0x66)  # PMS 5473 — section headers, dark cards
+    TEAL        = RGBColor(0x00, 0x7C, 0x8C)  # PMS 321 — accent, use sparingly
+    BRIGHT_CYAN = RGBColor(0x00, 0xBB, 0xCC)  # PMS 3215 — small highlights only
+    LIGHT_GRAY  = RGBColor(0xE0, 0xE0, 0xE0)  # PMS 5455 — card backgrounds, borders
+
+    # Derived / convenience aliases
+    BODY_TEXT   = BLACK                        # Default body text color
+    CARD_BG     = LIGHT_GRAY                   # Light card/box background
+    DARK_CARD   = DARK_TEAL                    # Dark card/box background
+
+
+class TIFonts:
+    """TI corporate font sizing for slide content.
+
+    These sizes match the TI template typography hierarchy.
+    Use these instead of raw Pt() values.
+    """
+
+    TITLE       = Pt(22)   # Slide titles
+    SUBTITLE    = Pt(16)   # Subtitles
+    SECTION     = Pt(16)   # Section headers within a slide
+    BODY        = Pt(12)   # Body text
+    SMALL_BODY  = Pt(11)   # Sub-bullets, secondary body
+    SMALL       = Pt(10)   # Captions, card labels
+    LABEL       = Pt(9)    # Fine print, annotations
+    FAMILY      = None     # None = inherit from template slide master
+
+
+# Legacy aliases for backward compatibility
+TI_RED = TIColors.RED
+TI_BLUE = TIColors.DARK_TEAL  # Corrected: was #00338D, now official dark teal
+TI_DARK_GRAY = TIColors.BLACK
+TI_LIGHT_GRAY = TIColors.GRAY
 
 # Template locations - use bundled templates
 SKILL_DIR = Path(__file__).parent
@@ -48,10 +104,20 @@ TEMPLATES = {
 @dataclass
 class ColorScheme:
     """Custom color scheme for presentations."""
-    primary: RGBColor = TI_RED
-    accent: RGBColor = TI_BLUE
-    text_primary: RGBColor = TI_DARK_GRAY
-    text_secondary: RGBColor = TI_LIGHT_GRAY
+    primary: RGBColor = None
+    accent: RGBColor = None
+    text_primary: RGBColor = None
+    text_secondary: RGBColor = None
+
+    def __post_init__(self):
+        if self.primary is None:
+            self.primary = TIColors.RED
+        if self.accent is None:
+            self.accent = TIColors.DARK_TEAL
+        if self.text_primary is None:
+            self.text_primary = TIColors.BLACK
+        if self.text_secondary is None:
+            self.text_secondary = TIColors.GRAY
 
 
 class TIPresentationBuilder:
@@ -355,6 +421,199 @@ class TIPresentationBuilder:
                 p.font.color.rgb = TI_LIGHT_GRAY
                 p.font.italic = True
                 p.alignment = PP_ALIGN.CENTER
+
+    # ──────────────────────────────────────────────────────────
+    # Brand constants exposed as instance attributes
+    # ──────────────────────────────────────────────────────────
+
+    colors = TIColors
+    fonts = TIFonts
+
+    # ──────────────────────────────────────────────────────────
+    # Freeform slide support
+    # ──────────────────────────────────────────────────────────
+
+    def add_freeform_slide(self, title: Optional[str] = None,
+                           layout_name: str = "Title Only"):
+        """Return a raw slide for custom spatial layout.
+
+        The slide inherits TI branding from the template slide master
+        (footer, logo, background). The caller places shapes freely
+        using add_branded_box(), add_accent_line(), add_text_box(),
+        or raw python-pptx calls.
+
+        ALL colors must come from builder.colors.* and ALL font sizes
+        from builder.fonts.*. Do not use raw RGBColor() or Pt() values.
+
+        Args:
+            title: Optional slide title text.
+            layout_name: Template layout name (default "Title Only").
+
+        Returns:
+            The python-pptx Slide object.
+        """
+        layout = self._get_layout_by_name(layout_name)
+        slide = self.prs.slides.add_slide(layout)
+        if title:
+            for shape in slide.placeholders:
+                if shape.placeholder_format.idx == 0:  # title placeholder
+                    shape.text = title
+                    break
+        return slide
+
+    def _get_layout_by_name(self, name: str):
+        """Find a slide layout by name, falling back to index 7."""
+        for layout in self.prs.slide_layouts:
+            if layout.name == name:
+                return layout
+        # Fallback: "Title Only" is typically index 7
+        return self.prs.slide_layouts[7]
+
+    def add_branded_box(self, slide, left, top, width, height,
+                        fill_color=None, text=None, font_size=None,
+                        font_color=None, bold=False, word_wrap=True,
+                        alignment=PP_ALIGN.LEFT, vertical="top",
+                        corner_radius=0.05):
+        """Add a rounded rectangle with TI brand-compliant styling.
+
+        Args:
+            slide: The slide object (from add_freeform_slide).
+            left, top, width, height: Position/size in Emu or Inches.
+            fill_color: A TIColors value (default: TIColors.CARD_BG).
+            text: Optional text content.
+            font_size: A TIFonts value (default: TIFonts.BODY).
+            font_color: A TIColors value (default: TIColors.BODY_TEXT).
+            bold: Whether text is bold.
+            word_wrap: Enable word wrapping (default True).
+            alignment: PP_ALIGN value (default LEFT).
+            vertical: Vertical anchor — "top", "middle", or "bottom".
+            corner_radius: Corner rounding 0.0–0.5 (default 0.05).
+
+        Returns:
+            The shape object (for further customization).
+        """
+        fill_color = fill_color or TIColors.CARD_BG
+        font_color = font_color or TIColors.BODY_TEXT
+        font_size = font_size or TIFonts.BODY
+
+        shape = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height
+        )
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = fill_color
+        shape.line.fill.background()
+        shape.adjustments[0] = corner_radius
+
+        if text is not None:
+            tf = shape.text_frame
+            tf.word_wrap = word_wrap
+            tf.margin_left = Pt(8)
+            tf.margin_right = Pt(8)
+            tf.margin_top = Pt(6)
+            tf.margin_bottom = Pt(6)
+
+            anchor_map = {"top": MSO_ANCHOR.TOP, "middle": MSO_ANCHOR.MIDDLE,
+                          "bottom": MSO_ANCHOR.BOTTOM}
+            tf.vertical_anchor = anchor_map.get(vertical, MSO_ANCHOR.TOP)
+
+            p = tf.paragraphs[0]
+            p.alignment = alignment
+            run = p.add_run()
+            run.text = text
+            run.font.size = font_size
+            run.font.bold = bold
+            run.font.color.rgb = font_color
+
+        return shape
+
+    def add_accent_line(self, slide, left, top, width,
+                        color=None, thickness=Emu(18288)):
+        """Add a horizontal accent line (defaults to TI Red).
+
+        Args:
+            slide: The slide object.
+            left, top, width: Position and width in Emu or Inches.
+            color: A TIColors value (default: TIColors.RED).
+            thickness: Line thickness (default ~2px).
+
+        Returns:
+            The shape object.
+        """
+        color = color or TIColors.RED
+        shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, left, top, width, thickness
+        )
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = color
+        shape.line.fill.background()
+        return shape
+
+    def add_text_box(self, slide, left, top, width, height,
+                     text="", font_size=None, font_color=None,
+                     bold=False, alignment=PP_ALIGN.LEFT,
+                     word_wrap=True):
+        """Add a text box with TI brand-compliant styling.
+
+        Args:
+            slide: The slide object.
+            left, top, width, height: Position/size.
+            text: Text content.
+            font_size: A TIFonts value (default: TIFonts.BODY).
+            font_color: A TIColors value (default: TIColors.BODY_TEXT).
+            bold: Whether text is bold.
+            alignment: PP_ALIGN value.
+            word_wrap: Enable word wrapping.
+
+        Returns:
+            The text frame object (for adding paragraphs).
+        """
+        font_size = font_size or TIFonts.BODY
+        font_color = font_color or TIColors.BODY_TEXT
+
+        txbox = slide.shapes.add_textbox(left, top, width, height)
+        tf = txbox.text_frame
+        tf.word_wrap = word_wrap
+        p = tf.paragraphs[0]
+        p.alignment = alignment
+        run = p.add_run()
+        run.text = text
+        run.font.size = font_size
+        run.font.bold = bold
+        run.font.color.rgb = font_color
+        return tf
+
+    def add_paragraph(self, text_frame, text, font_size=None,
+                      font_color=None, bold=False,
+                      space_before=Pt(0), space_after=Pt(0)):
+        """Add a paragraph to an existing text frame.
+
+        Use this to build multi-line content in branded boxes or
+        text boxes created by add_branded_box() or add_text_box().
+
+        Args:
+            text_frame: The text frame to append to.
+            text: Paragraph text.
+            font_size: A TIFonts value (default: TIFonts.BODY).
+            font_color: A TIColors value (default: TIColors.BODY_TEXT).
+            bold: Whether text is bold.
+            space_before: Space above paragraph.
+            space_after: Space below paragraph.
+
+        Returns:
+            The paragraph object.
+        """
+        font_size = font_size or TIFonts.BODY
+        font_color = font_color or TIColors.BODY_TEXT
+
+        p = text_frame.add_paragraph()
+        p.space_before = space_before
+        p.space_after = space_after
+        run = p.add_run()
+        run.text = text
+        run.font.size = font_size
+        run.font.bold = bold
+        run.font.color.rgb = font_color
+        return p
 
     def add_images_from_directory(
         self,
