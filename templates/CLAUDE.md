@@ -16,6 +16,25 @@ To see all available commands, check: `ls ~/.claude/commands/`
 2. Follow the specific instructions provided in each command file
 3. These commands are designed to work across all repositories and projects
 
+## Commit Trailer
+
+When creating git commits, end the message with a `Signed-off-by` trailer using
+the author identity from the repository's git configuration. Resolve the name and
+email by running:
+
+```bash
+git config user.name
+git config user.email
+```
+
+Then format the trailer as:
+
+```
+Signed-off-by: name <email>
+```
+
+Do **NOT** use `Co-Authored-By: Claude ...` or any other AI attribution trailer.
+
 ## General Formatting Guidelines
 
 When editing a source file that uses tabs (vs spaces) for indention, preserve the use of tabs.
