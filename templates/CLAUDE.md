@@ -76,13 +76,16 @@ This is a paragraph.
 
 ##### Incorrect (missing blank line after paragraph):
 
+```
 This is a paragraph.
 - Item 1
 - Item 2
 - Item 3
+```
 
 ##### Incorrect (blank lines between list items):
 
+```
 This is a paragraph.
 
 - Item 1
@@ -90,6 +93,7 @@ This is a paragraph.
 - Item 2
 
 - Item 3
+```
 
 ### Tables
 
