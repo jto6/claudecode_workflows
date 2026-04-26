@@ -1,12 +1,81 @@
 #!/usr/bin/env bash
-# bulletize — CLI wrapper for the /bulletize slash command.
-# Runs Claude Code in headless mode so the command is usable outside an
-# interactive session. All arguments are passed through unchanged.
-#
-# Examples:
-#   bulletize                        # bulletize clipboard, write back to clipboard
-#   bulletize -mmap                  # mind-map style output (no `- ` prefix)
-#   bulletize -summarize             # distill before bulletizing
-#   bulletize -outfile out.md        # write result to a file instead
-#   bulletize https://youtu.be/...   # transcribe + distill + bulletize a video
-exec claude -p "/bulletize $*"
+# bulletize — fast path via direct API when ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL is set,
+# otherwise falls back to `claude -p /bulletize ...`.
+# -summarize always routes to slow path (preserves /distill chaining).
+set -euo pipefail
+
+REPO="$(dirname "$(dirname "$(readlink -f "$0")")")"
+CLIP="${CLIP_BIN:-$REPO/bin/clip}"
+
+FORCE_SLOW=0
+FORCE_FAST=0
+STDIN_MODE=0
+MMAP=0
+SUMMARIZE=0
+OUTFILE=""
+HAS_POSITIONAL=0
+PASSTHROUGH=()
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--slow) FORCE_SLOW=1; shift ;;
+		--fast) FORCE_FAST=1; shift ;;
+		--stdin) STDIN_MODE=1; shift ;;
+		-mmap)      MMAP=1;     PASSTHROUGH+=("$1"); shift ;;
+		-summarize) SUMMARIZE=1; PASSTHROUGH+=("$1"); shift ;;
+		-outfile)   OUTFILE="$2"; PASSTHROUGH+=("$1" "$2"); shift 2 ;;
+		-*)         PASSTHROUGH+=("$1"); shift ;;
+		*)          HAS_POSITIONAL=1; PASSTHROUGH+=("$1"); shift ;;
+	esac
+done
+
+# Decide path
+USE_FAST=0
+if [ "$SUMMARIZE" -eq 1 ]; then
+	USE_FAST=0  # always slow — preserves /distill chaining
+elif [ "$FORCE_FAST" -eq 1 ]; then
+	if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${ANTHROPIC_BASE_URL:-}" ]; then
+		echo "bulletize: --fast requires ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL" >&2
+		exit 1
+	fi
+	USE_FAST=1
+elif [ "$FORCE_SLOW" -eq 1 ]; then
+	USE_FAST=0
+elif { [ -n "${ANTHROPIC_API_KEY:-}" ] || [ -n "${ANTHROPIC_BASE_URL:-}" ]; } \
+     && [ "$HAS_POSITIONAL" -eq 0 ]; then
+	USE_FAST=1
+fi
+
+if [ "$USE_FAST" -eq 1 ]; then
+	PROMPT="$REPO/prompts/bulletize.md"
+	SUFFIX=""
+	if [ "$MMAP" -eq 1 ]; then
+		SUFFIX='Omit the leading "- " prefix from each line; output only tab indentation followed by text.'
+	fi
+	if [ "$STDIN_MODE" -eq 1 ]; then
+		"$REPO/bin/llm-rewrite" "$PROMPT" "$SUFFIX"
+	else
+		RESULT=$("$CLIP" read | "$REPO/bin/llm-rewrite" "$PROMPT" "$SUFFIX")
+		if [ -n "$OUTFILE" ]; then
+			printf '%s' "$RESULT" > "$OUTFILE"
+			echo "Bulletized: $OUTFILE"
+		else
+			printf '%s' "$RESULT" | "$CLIP" write
+			echo "Bulletized: clipboard"
+		fi
+	fi
+else
+	if [ "$STDIN_MODE" -eq 1 ]; then
+		# claude -p cannot read from stdin as input text; route through temp files
+		# so the slash command gets a file path and writes output we can capture.
+		_TMP_IN=$(mktemp /tmp/bulletize-in.XXXXXX.txt)
+		_TMP_OUT=$(mktemp /tmp/bulletize-out.XXXXXX.txt)
+		cat > "$_TMP_IN"
+		claude -p "/bulletize${PASSTHROUGH[*]:+ ${PASSTHROUGH[*]}} -outfile $_TMP_OUT $_TMP_IN" >&2
+		_STATUS=$?
+		cat "$_TMP_OUT"
+		rm -f "$_TMP_IN" "$_TMP_OUT"
+		exit $_STATUS
+	fi
+	exec claude -p "/bulletize${PASSTHROUGH[*]:+ ${PASSTHROUGH[*]}}"
+fi

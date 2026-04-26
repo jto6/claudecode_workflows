@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Mock clip: uses $BATS_TMPDIR/clipboard as a file-backed clipboard store
+CLIPBOARD_FILE="${BATS_TMPDIR}/clipboard"
+case "${1:-}" in
+	write) cat > "$CLIPBOARD_FILE" ;;
+	read)  cat "$CLIPBOARD_FILE" ;;
+	*)     echo "Usage: clip {read|write}" >&2; exit 2 ;;
+esac
