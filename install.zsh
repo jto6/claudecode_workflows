@@ -11,6 +11,7 @@ CLAUDE_USER_COMMANDS="$HOME/.claude/commands"
 CLAUDE_USER_TEMPLATES="$HOME/.claude/templates"
 CLAUDE_USER_HOOKS="$HOME/.claude/hooks"
 CLAUDE_USER_SKILLS="$HOME/.claude/skills"
+CLAUDE_USER_BIN="$HOME/.claude/bin"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 
 CLAUDE_SKILLS_VENV="$HOME/.venvs/claude-skills"
@@ -22,6 +23,7 @@ mkdir -p "$CLAUDE_USER_COMMANDS"
 mkdir -p "$CLAUDE_USER_TEMPLATES"
 mkdir -p "$CLAUDE_USER_HOOKS"
 mkdir -p "$CLAUDE_USER_SKILLS"
+mkdir -p "$CLAUDE_USER_BIN"
 
 # Create Python virtual environment for skills dependencies
 if [[ -f "$REPO_PATH/reqs_for_skills.txt" ]]; then
@@ -46,6 +48,20 @@ for cmd_file in "$REPO_PATH/commands"/*.md; do
             echo "✅ Linked /$cmd_name command"
         fi
         ln -sf "$cmd_file" "$CLAUDE_USER_COMMANDS/$cmd_name"
+    fi
+done
+
+# Create symlinks to bin scripts (so they auto-update with git pulls)
+for bin_file in "$REPO_PATH/bin"/*; do
+    if [[ -f "$bin_file" ]]; then
+        bin_name=$(basename "$bin_file")
+        chmod +x "$bin_file"
+        if [[ -L "$CLAUDE_USER_BIN/$bin_name" ]]; then
+            echo "🔄 Updated bin: $bin_name"
+        else
+            echo "✅ Linked bin: $bin_name"
+        fi
+        ln -sf "$bin_file" "$CLAUDE_USER_BIN/$bin_name"
     fi
 done
 

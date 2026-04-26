@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# clip — read from / write to the system clipboard
+#
+# Usage:
+#   clip read           # prints clipboard contents to stdout
+#   clip write          # reads stdin, sets clipboard contents
+#
+# Auto-detects the available clipboard tool: wl-clipboard (Wayland),
+# xclip (X11), or pbcopy/pbpaste (macOS). Tab characters and other
+# whitespace are preserved byte-for-byte.
+
+set -euo pipefail
+
+usage() {
+	echo "Usage: clip {read|write}" >&2
+	exit 2
+}
+
+err_no_tool() {
+	echo "Error: no clipboard tool available." >&2
+	echo "Install one of: xclip, wl-clipboard (Linux), or run on macOS." >&2
+	exit 1
+}
+
+case "${1:-}" in
+	read)
+		if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-paste >/dev/null 2>&1; then
+			exec wl-paste --no-newline
+		elif [ -n "${DISPLAY:-}" ] && command -v xclip >/dev/null 2>&1; then
+			exec xclip -o -selection clipboard
+		elif command -v pbpaste >/dev/null 2>&1; then
+			exec pbpaste
+		else
+			err_no_tool
+		fi
+		;;
+	write)
+		if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-copy >/dev/null 2>&1; then
+			exec wl-copy
+		elif [ -n "${DISPLAY:-}" ] && command -v xclip >/dev/null 2>&1; then
+			exec xclip -i -selection clipboard
+		elif command -v pbcopy >/dev/null 2>&1; then
+			exec pbcopy
+		else
+			err_no_tool
+		fi
+		;;
+	*)
+		usage
+		;;
+esac

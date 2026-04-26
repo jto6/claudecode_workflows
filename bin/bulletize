@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# bulletize — CLI wrapper for the /bulletize slash command.
+# Runs Claude Code in headless mode so the command is usable outside an
+# interactive session. All arguments are passed through unchanged.
+#
+# Examples:
+#   bulletize                        # bulletize clipboard, write back to clipboard
+#   bulletize -mmap                  # mind-map style output (no `- ` prefix)
+#   bulletize -summarize             # distill before bulletizing
+#   bulletize -outfile out.md        # write result to a file instead
+#   bulletize https://youtu.be/...   # transcribe + distill + bulletize a video
+exec claude -p "/bulletize $*"

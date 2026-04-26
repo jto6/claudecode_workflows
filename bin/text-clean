@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# text-clean — CLI wrapper for the /text-clean slash command.
+# Runs Claude Code in headless mode so the command is usable outside an
+# interactive session. All arguments are passed through unchanged.
+#
+# Examples:
+#   text-clean                       # clean clipboard, write back to clipboard
+#   text-clean -journal              # journal tone
+#   text-clean -outfile out.md       # write result to a file instead
+#   text-clean https://youtu.be/...  # transcribe + clean a video
+exec claude -p "/text-clean $*"

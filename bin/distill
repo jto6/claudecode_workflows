@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# distill — CLI wrapper for the /distill slash command.
+# Runs Claude Code in headless mode so the command is usable outside an
+# interactive session. All arguments are passed through unchanged.
+#
+# Examples:
+#   distill                          # distill clipboard at level 2 (default)
+#   distill 3                        # detailed distillation
+#   distill -quotes                  # extract key quotes only
+#   distill -outfile out.md          # write result to a file instead
+#   distill https://youtu.be/...     # distill a YouTube video
+exec claude -p "/distill $*"
