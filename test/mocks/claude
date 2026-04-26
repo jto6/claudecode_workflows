@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mock claude: marks that the slow path was taken.
+printf '%s\n' "$@" > "$BATS_TMPDIR/claude.invoked"
+echo "Cleaned: clipboard"

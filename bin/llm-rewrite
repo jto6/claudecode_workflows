@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# llm-rewrite — direct API call. Reads stdin, writes stdout.
+# Usage: llm-rewrite <prompt-file> [extra-system-suffix]
+#
+# Auth (in priority order):
+#   1. ANTHROPIC_API_KEY set → use it with ANTHROPIC_BASE_URL or api.anthropic.com
+#   2. ANTHROPIC_BASE_URL set → fetch JWT via the @ti/claude-code token helper (Kerberos)
+#
+# Optional env: LLM_REWRITE_MODEL (default: ANTHROPIC_SMALL_FAST_MODEL or claude-haiku-4-5)
+set -euo pipefail
+
+PROMPT_FILE="$1"
+SUFFIX="${2:-}"
+MODEL="${LLM_REWRITE_MODEL:-${ANTHROPIC_SMALL_FAST_MODEL:-claude-haiku-4-5}}"
+
+# Resolve auth and endpoint
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+	API_KEY="$ANTHROPIC_API_KEY"
+	ENDPOINT="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}/v1/messages"
+elif [ -n "${ANTHROPIC_BASE_URL:-}" ]; then
+	# TI gateway: obtain JWT from Kerberos token helper bundled with @ti/claude-code
+	NODE_PREFIX=$(node -e "process.stdout.write(process.execPath.replace(/\/bin\/node\$/, ''))" 2>/dev/null) || {
+		echo "llm-rewrite: node not found on PATH" >&2; exit 1
+	}
+	TOKEN_HELPER="$NODE_PREFIX/lib/node_modules/@ti/claude-code/lib/get-token.js"
+	if [ ! -f "$TOKEN_HELPER" ]; then
+		echo "llm-rewrite: TI token helper not found: $TOKEN_HELPER" >&2; exit 1
+	fi
+	API_KEY=$(node "$TOKEN_HELPER" 2>/dev/null) || {
+		echo "llm-rewrite: failed to get token (Kerberos ticket expired? run: kinit)" >&2; exit 1
+	}
+	ENDPOINT="$ANTHROPIC_BASE_URL/v1/messages"
+else
+	echo "llm-rewrite: set ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL" >&2
+	exit 1
+fi
+
+# Parse ANTHROPIC_CUSTOM_HEADERS (newline-separated "Name: Value" pairs) into curl -H args
+HEADER_ARGS=()
+if [ -n "${ANTHROPIC_CUSTOM_HEADERS:-}" ]; then
+	while IFS= read -r hdr; do
+		[ -n "$hdr" ] && HEADER_ARGS+=(-H "$hdr")
+	done <<< "$ANTHROPIC_CUSTOM_HEADERS"
+fi
+
+SYSTEM=$(cat "$PROMPT_FILE")
+if [ -n "$SUFFIX" ]; then
+	SYSTEM="${SYSTEM}
+
+${SUFFIX}"
+fi
+USER_TEXT=$(cat)
+
+jq -n \
+	--arg model "$MODEL" \
+	--arg sys "$SYSTEM" \
+	--arg user "$USER_TEXT" \
+	'{model: $model, max_tokens: 4096, system: $sys, messages: [{role: "user", content: $user}]}' \
+| curl -sS "$ENDPOINT" \
+	-H "x-api-key: $API_KEY" \
+	-H "anthropic-version: 2023-06-01" \
+	-H "content-type: application/json" \
+	"${HEADER_ARGS[@]}" \
+	--data-binary @- \
+| jq -er '.content[0].text'

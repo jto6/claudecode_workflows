@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Mock curl: captures args (one per line) and stdin body, returns fixture response.
+# Tests assert against $BATS_TMPDIR/curl.args and $BATS_TMPDIR/curl.body.
+printf '%s\n' "$@" > "$BATS_TMPDIR/curl.args"
+cat > "$BATS_TMPDIR/curl.body"
+cat "${MOCK_CURL_RESPONSE_FILE:-/dev/null}"

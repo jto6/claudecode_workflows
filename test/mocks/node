@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Mock node: used only for the ANTHROPIC_BASE_URL / TI gateway path in llm-rewrite.
+#   node -e "..."         → return the fake node prefix (so TOKEN_HELPER path resolves)
+#   node <path-to-script> → return a fake JWT token
+case "${1:-}" in
+	-e) printf '%s' "${MOCK_NODE_PREFIX:-$BATS_TMPDIR/fake-node}" ;;
+	*)  printf '%s' "fake-test-token" ;;
+esac

@@ -72,37 +72,7 @@ Then transcribe the downloaded file (typically `/tmp/yt_audio.mp3`) using Whispe
 
 ### Step 1: Rewrite the text
 
-Apply all of the following rules to the input text:
-
-#### Organization
-- If the thoughts and ideas are scattered or poorly structured, reorganize them for logical flow and clarity.
-- Group related ideas together. Ensure each paragraph has a single clear point.
-
-#### Grammar and mechanics
-- Fix all grammar, spelling, and punctuation errors.
-
-#### Conciseness (technical and conversational tones only)
-- Shorten or split long sentences.
-- Remove filler words, redundancy, and repetition.
-- Eliminate weasel words and unnecessary qualifiers.
-- **Journal tone exception:** Do not aggressively trim for brevity. Preserve the natural rhythm and flow of the writing. Only remove true redundancy where the same point is stated identically, not where repetition serves emphasis or reflection.
-
-#### Clarity
-- Rewrite ambiguous statements to be explicit.
-- Replace vague language with precise, specific wording.
-- Use active voice where possible.
-
-#### Tone
-- **Technical (default):** confident, direct, precise. Appropriate for documentation, technical writing, emails to colleagues, and professional communication.
-- **Conversational (`-conversational`):** natural, approachable, readable. Appropriate for blog posts, casual updates, and informal communication.
-- **Journal (`-journal`):** personal, reflective, and introspective. Preserve the author's thought patterns, emotions, and the texture of their experience. The goal is to capture how they think and feel, not to compress the text into its most efficient form. Keep stream-of-consciousness flow where it reveals the author's mindset. Appropriate for diary entries, personal reflections, and experience logs.
-- In technical and conversational modes: make the text more confident, direct, and readable while preserving the author's voice.
-- In journal mode: prioritize authenticity and emotional fidelity over directness. Clean up grammar and clarity, but do not flatten the voice.
-
-#### Preservation
-- Preserve the original meaning and all key details.
-- Do not add new information or opinions.
-- Maintain existing formatting conventions (markdown, bullet lists, headers, etc.).
+Apply the system prompt at `prompts/text-clean.md` (default technical tone), `prompts/text-clean.conversational.md` (for `-conversational`), or `prompts/text-clean.journal.md` (for `-journal`) to the input text. Read the appropriate prompt file to get the full rewriting rules.
 
 ### Step 2: Output
 
