@@ -5,12 +5,15 @@ Distill the essential ideas from any source (URL, image, video, or text) into a 
 ## Usage
 
 ```
-/distill [level | -quotes] <source>
+/distill [level | -quotes] [-outfile <path>] [<source>]
 ```
 
 - `level` — optional integer **1**, **2**, or **3** controlling output depth (default: **2**)
 - `-quotes` — optional flag; extracts the most powerful exact quotes and organizes them by theme
-- `source` — a URL, file path, pasted text, or attachment
+- `-outfile <path>` — optional; writes the distilled markdown to the given file path instead of the clipboard. The next token after `-outfile` is consumed as the path.
+- `source` — a URL, file path, pasted text, or attachment. **If no source is provided, the system clipboard is used as the source text** (treated as plain text — URL/image/video detection is skipped).
+
+By default (no `-outfile`), the distilled markdown is written back to the system clipboard via `~/.claude/bin/clip`, which preserves whitespace at the byte level.
 
 **Level meanings:**
 
@@ -30,14 +33,19 @@ The user will provide one or more of:
 
 ### Step 0: Determine the distillation mode
 
-Check whether the first argument is a bare integer 1, 2, or 3, or the flag `-quotes`.
+Inspect the leading flag/level tokens after `/distill` (any order, before any source). Recognized: bare integer `1`, `2`, or `3`; `-quotes`; `-outfile`.
 
-- If it is `-quotes`, set mode to **quotes** and treat the remainder as the source. Skip Steps 2–3 and proceed to Step 4 after ingestion.
-- If it is a bare integer 1, 2, or 3, record that as the level and treat the remainder as the source.
-- If it is none of the above, default to level 2.
+- If `-quotes` is present, set mode to **quotes**. Skip Steps 2–3 and proceed to Step 4 after ingestion.
+- If a bare integer `1`, `2`, or `3` is present, record that as the level.
+- If neither a level nor `-quotes` is present, default to level 2.
+- If `-outfile <path>` is present, consume the next token as the output file path. Set the output destination to that path (overrides the default of clipboard).
+- If `-outfile` is not given, the output destination is the system clipboard.
 
 ### Step 1: Ingest the source
 
+Determine the source from whatever remains after the flags:
+
+- **No source argument**: read the system clipboard with `~/.claude/bin/clip read > /tmp/distill-input.tmp` (Bash tool), then Read that file's contents as the source text. Skip URL/image/video/file detection.
 - **URL**: Fetch the content with WebFetch. For YouTube URLs, use `python3` with the `youtube_transcript_api` library to fetch the transcript (see YouTube note below).
 - **Image/video attachment**: Read the file visually; examine all visible text, diagrams, and structure.
 - **Text/file**: Read the content directly.
@@ -224,8 +232,8 @@ Quote rules:
 #### Other rules
 - Do not pad: if a concept has no meaningful sub-points, omit sub-bullets
 - No blank lines between bullets at any level — the list is continuous
-- Save the file as `[slug-of-title].md` in the current working directory
-- Report the filename, the level used, and a one-line summary of what was distilled
+- **Default (no `-outfile`)**: write the markdown to `/tmp/distilled.md` via the Write tool, then copy it to the clipboard with `~/.claude/bin/clip write < /tmp/distilled.md` (Bash tool). Confirm with `Distilled: clipboard`, the level used, and a one-line summary.
+- **With `-outfile <path>`**: write the markdown directly to `<path>`. Confirm with `Distilled: <path>`, the level used, and a one-line summary.
 
 ### Tone
 
@@ -268,8 +276,8 @@ Use this step only when `-quotes` was set in Step 0. After ingesting the source 
 
 #### Output rules
 
-- Save the file as `[slug-of-title]-quotes.md` in the current working directory
-- Report the filename and a one-line summary of what was extracted
+- **Default (no `-outfile`)**: write the markdown to `/tmp/distilled-quotes.md` via the Write tool, then copy it to the clipboard with `~/.claude/bin/clip write < /tmp/distilled-quotes.md` (Bash tool). Confirm with `Distilled: clipboard` and a one-line summary.
+- **With `-outfile <path>`**: write the markdown directly to `<path>`. Confirm with `Distilled: <path>` and a one-line summary.
 - **Wrap every quote in double quotes** (`"..."`) so quotes are visually distinct from commentary and headings
 - No bold on quote text — let the words speak for themselves
 - No blank lines between bullets at any level

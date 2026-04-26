@@ -5,22 +5,28 @@ Rewrite text for correct grammar, clear organization, clarity, and conciseness �
 ## Usage
 
 ```
-/text-clean [-conversational | -journal] <file path, audio/video file, URL, or inline text>
+/text-clean [-conversational | -journal] [-outfile <path>] [<file path, audio/video file, URL, or inline text>]
 ```
 
-- `-conversational` — optional flag as the first argument; switches tone from technical (default) to conversational
-- `-journal` — optional flag as the first argument; uses a personal, reflective tone that preserves thought patterns and emotions
-- Input — a file path, an audio/video file path, a YouTube or audio URL, or inline text pasted after the command
+- `-conversational` — optional flag; switches tone from technical (default) to conversational
+- `-journal` — optional flag; uses a personal, reflective tone that preserves thought patterns and emotions
+- `-outfile <path>` — optional; writes the cleaned text to the given file path instead of the clipboard. The next token after `-outfile` is consumed as the path.
+- Input — a file path, an audio/video file path, a YouTube or audio URL, or inline text pasted after the command. **If no input is provided, the system clipboard is used as the input source.**
+
+By default (no `-outfile`), the cleaned text is written back to the system clipboard via `~/.claude/bin/clip`, which preserves whitespace at the byte level.
 
 ## Instructions
 
 ### Step 0: Parse arguments
 
-1. Check whether the first token after `/text-clean` is `-conversational` or `-journal`.
-   - If `-conversational`, set tone to **conversational** and treat the remainder as input.
-   - If `-journal`, set tone to **journal** and treat the remainder as input.
-   - Otherwise, set tone to **technical** (default) and treat everything as input.
-2. Determine the input source:
+1. Inspect the leading flag tokens after `/text-clean` (any order, before any input):
+   - `-conversational` → set tone to **conversational**
+   - `-journal` → set tone to **journal**
+   - `-outfile <path>` → consume the next token as the output file path. Set the output destination to that path (overrides the default of clipboard).
+   - If no tone flag is set, default tone is **technical**.
+   - If `-outfile` is not given, the output destination is the system clipboard.
+2. Determine the input source from whatever remains after the flags:
+   - If nothing remains (no input argument): read the system clipboard with `~/.claude/bin/clip read > /tmp/text-clean-input.tmp` (Bash tool), then Read that file's contents as the input. Skip URL/audio/file detection. Proceed to Step 1.
    - If the input starts with `http://` or `https://`: treat as a **URL** (YouTube video or audio URL). Proceed to Step 0.5.
    - If the input is a file path ending with an audio or video extension (`.mp3`, `.m4a`, `.wav`, `.flac`, `.ogg`, `.aac`, `.wma`, `.opus`, `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.m4v`): treat as a **local audio/video file**. Proceed to Step 0.5.
    - If the input is a valid file path to a text file: read the file contents and proceed to Step 1.
@@ -28,7 +34,7 @@ Rewrite text for correct grammar, clear organization, clarity, and conciseness �
 
 ### Step 0.5: Transcribe audio/video input
 
-Use this step only when the input was identified as a URL or local audio/video file in Step 0. After transcription, treat the transcript as inline text and proceed to Step 1. Output will always be written to `/tmp/text-cleaned.md` for audio/URL inputs.
+Use this step only when the input was identified as a URL or local audio/video file in Step 0. After transcription, treat the transcript as inline text and proceed to Step 1.
 
 #### For a local audio/video file
 
@@ -100,9 +106,8 @@ Apply all of the following rules to the input text:
 
 ### Step 2: Output
 
-- **Always write output to a file** using the Write tool. Terminal copy-paste can alter whitespace and formatting, so file output is required to preserve the exact text.
-- If the input was a text file path, write the cleaned text back to the same file.
-- Otherwise (inline text, audio file, or URL), write the cleaned text to `/tmp/text-cleaned.md`.
+- Always write output to a file via the Write tool — never assemble it inline via heredoc or `echo`.
+- **Default (no `-outfile`)**: write the cleaned text to `/tmp/text-cleaned.md`, then copy it to the clipboard with `~/.claude/bin/clip write < /tmp/text-cleaned.md` (Bash tool). Confirm with: `Cleaned: clipboard`.
+- **With `-outfile <path>`**: write the cleaned text directly to `<path>`. Confirm with: `Cleaned: <path>`.
 - Write directly to the output path without asking for confirmation — overwrite any existing file.
-- After writing, confirm with a single line: `Cleaned: <file path>`
-- Do not print the cleaned text to the terminal. The file is the output.
+- Do not print the cleaned text to the terminal. The file or clipboard is the output.
