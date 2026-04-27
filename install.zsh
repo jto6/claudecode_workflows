@@ -13,6 +13,7 @@ CLAUDE_USER_HOOKS="$HOME/.claude/hooks"
 CLAUDE_USER_SKILLS="$HOME/.claude/skills"
 CLAUDE_USER_BIN="$HOME/.claude/bin"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+CLAUDE_SETTINGS_LOCAL="$HOME/.claude/settings.local.json"
 
 CLAUDE_SKILLS_VENV="$HOME/.venvs/claude-skills"
 
@@ -108,6 +109,29 @@ if [[ -f "$REPO_PATH/hooks/settings_template.json" ]]; then
         cp "$REPO_PATH/hooks/settings_template.json" "$CLAUDE_SETTINGS"
         echo "✅ Created workflow hooks configuration"
     fi
+fi
+
+# Apply environment-specific settings into settings.json
+echo ""
+echo "⚙️  Select environment:"
+echo "  1) TI (work) — adds Opus 4.7 → 4.6 model remap for TI gateway"
+echo "  2) Home"
+echo "  3) Skip"
+read "env_choice?Enter choice [1/2/3]: "
+case "$env_choice" in
+    1) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.ti.json" > "$CLAUDE_SETTINGS.tmp"
+       mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+       echo "✅ Applied TI environment settings" ;;
+    2) echo "✅ Home environment — no additional settings needed" ;;
+    *) echo "⏭️  Skipped environment selection" ;;
+esac
+
+# Create settings.local.json for new machines
+if [[ ! -f "$CLAUDE_SETTINGS_LOCAL" ]]; then
+    cp "$REPO_PATH/hooks/settings.local.template.json" "$CLAUDE_SETTINGS_LOCAL"
+    echo "✅ Created settings.local.json from template"
+else
+    echo "⏭️  settings.local.json already exists, skipping"
 fi
 
 # Create symlinks to skills (directories, so they auto-update with git pulls)

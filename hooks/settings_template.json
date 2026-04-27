@@ -39,9 +39,17 @@
 
       "Bash(python3 /home/jon/dev/utility-scripts/freeplane/mm2md.py *)",
 
+      "Bash(source *)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(chmod *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+
       "Write(/tmp/*)",
       "Bash(yt-dlp *)",
-      "Bash(python3 -c *)"
+      "Bash(python3 -c *)",
+      "Bash(~/.claude/bin/clip *)"
     ],
     "deny": [
       "Bash(rm -rf *)",
