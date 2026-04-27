@@ -71,7 +71,16 @@ else
 		_TMP_IN=$(mktemp /tmp/bulletize-in.XXXXXX.txt)
 		_TMP_OUT=$(mktemp /tmp/bulletize-out.XXXXXX.txt)
 		cat > "$_TMP_IN"
-		claude -p "/bulletize${PASSTHROUGH[*]:+ ${PASSTHROUGH[*]}} -outfile $_TMP_OUT $_TMP_IN" >&2
+		# Wrap claude in `script` to allocate a PTY: when authenticated via claude.ai
+		# OAuth (no ANTHROPIC_API_KEY), `claude -p` requires a TTY to load credentials,
+		# otherwise it exits immediately with apiKeySource:"none" and empty result.
+		# -E never disables PTY echo (keeps the typescript clean and prevents claude
+		# from hanging on echoed stdin). Outer `</dev/null` closes the parent stdin.
+		# --permission-mode bypassPermissions: /bulletize uses the Write tool to produce
+		# $_TMP_OUT, which would otherwise prompt for approval and fail in headless mode.
+		script -q -E never -c \
+			"claude -p --permission-mode bypassPermissions '/bulletize${PASSTHROUGH[*]:+ ${PASSTHROUGH[*]}} -outfile $_TMP_OUT $_TMP_IN'" \
+			/dev/null </dev/null >&2
 		_STATUS=$?
 		cat "$_TMP_OUT"
 		rm -f "$_TMP_IN" "$_TMP_OUT"
