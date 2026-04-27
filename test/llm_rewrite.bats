@@ -126,11 +126,11 @@ setup() {
 	jq -e '.model == "claude-haiku-4-5"' "$BATS_TMPDIR/curl.body" >/dev/null
 }
 
-@test "sends user text as the message content" {
+@test "sends user text wrapped in <text> tags as the message content" {
 	export ANTHROPIC_API_KEY="test-key"
 	run bash "$BIN/llm-rewrite" "$FIXTURES/prompt.md" <<< "my specific input"
 	[ "$status" -eq 0 ]
-	jq -e '.messages[0].content == "my specific input"' "$BATS_TMPDIR/curl.body" >/dev/null
+	jq -e '.messages[0].content | contains("<text>\nmy specific input\n</text>")' "$BATS_TMPDIR/curl.body" >/dev/null
 }
 
 # ── response ─────────────────────────────────────────────────────────────────

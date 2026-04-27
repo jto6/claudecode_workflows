@@ -11,14 +11,44 @@ FORCE_FAST=0
 STDIN_MODE=0
 TONE="default"
 OUTFILE=""
+BACKEND=""
+TEXT_INLINE=""
 HAS_POSITIONAL=0
 PASSTHROUGH=()
 
 while [ $# -gt 0 ]; do
 	case "$1" in
+		-h|--help)
+			cat <<'EOF'
+Usage: text-clean [OPTIONS] [FILE|URL|AUDIO]
+
+Clean text for grammar, clarity, and conciseness.
+Default: reads from clipboard, writes back to clipboard.
+
+Input:
+  (default)          read from clipboard
+  --stdin            read from stdin
+  --text TEXT        process TEXT directly (output to stdout)
+  FILE|URL|AUDIO     input source (slow path only)
+
+Options:
+  -h, --help         show this help
+  --fast             force fast path (direct API)
+  --slow             force slow path (claude -p)
+  --backend BACKEND  fast-path backend: anthropic (default) or local (Ollama)
+  -conversational    conversational tone (default: technical)
+  -journal           journal tone
+  -outfile FILE      write output to FILE instead of clipboard
+
+Fast path requires ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL.
+Local backend requires Ollama at OLLAMA_HOST (default: http://localhost:11434).
+EOF
+			exit 0 ;;
 		--slow) FORCE_SLOW=1; shift ;;
 		--fast) FORCE_FAST=1; shift ;;
 		--stdin) STDIN_MODE=1; shift ;;
+		--backend) BACKEND="$2"; shift 2 ;;
+		--text) TEXT_INLINE="$2"; shift 2 ;;
 		-conversational) TONE="conversational"; PASSTHROUGH+=("$1"); shift ;;
 		-journal)        TONE="journal";        PASSTHROUGH+=("$1"); shift ;;
 		-outfile)        OUTFILE="$2";          PASSTHROUGH+=("$1" "$2"); shift 2 ;;
@@ -29,7 +59,9 @@ done
 
 # Decide path
 USE_FAST=0
-if [ "$FORCE_FAST" -eq 1 ]; then
+if [ "$BACKEND" = "local" ]; then
+	USE_FAST=1
+elif [ "$FORCE_FAST" -eq 1 ]; then
 	if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${ANTHROPIC_BASE_URL:-}" ]; then
 		echo "text-clean: --fast requires ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL" >&2
 		exit 1
@@ -48,10 +80,20 @@ if [ "$USE_FAST" -eq 1 ]; then
 		journal)        PROMPT="$REPO/prompts/text-clean.journal.md" ;;
 		*)              PROMPT="$REPO/prompts/text-clean.md" ;;
 	esac
-	if [ "$STDIN_MODE" -eq 1 ]; then
-		"$REPO/bin/llm-rewrite" "$PROMPT"
+	BACKEND_ARGS=()
+	[ -n "$BACKEND" ] && BACKEND_ARGS=(--backend "$BACKEND")
+	if [ -n "$TEXT_INLINE" ]; then
+		RESULT=$(printf '%s' "$TEXT_INLINE" | "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$PROMPT")
+		if [ -n "$OUTFILE" ]; then
+			printf '%s' "$RESULT" > "$OUTFILE"
+			echo "Cleaned: $OUTFILE"
+		else
+			printf '%s\n' "$RESULT"
+		fi
+	elif [ "$STDIN_MODE" -eq 1 ]; then
+		"$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$PROMPT"
 	else
-		RESULT=$("$CLIP" read | "$REPO/bin/llm-rewrite" "$PROMPT")
+		RESULT=$("$CLIP" read | "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$PROMPT")
 		if [ -n "$OUTFILE" ]; then
 			printf '%s' "$RESULT" > "$OUTFILE"
 			echo "Cleaned: $OUTFILE"
@@ -61,12 +103,16 @@ if [ "$USE_FAST" -eq 1 ]; then
 		fi
 	fi
 else
-	if [ "$STDIN_MODE" -eq 1 ]; then
+	if [ -n "$TEXT_INLINE" ] || [ "$STDIN_MODE" -eq 1 ]; then
 		# claude -p cannot read from stdin as input text; route through temp files
 		# so the slash command gets a file path and writes output we can capture.
 		_TMP_IN=$(mktemp /tmp/text-clean-in.XXXXXX.txt)
 		_TMP_OUT=$(mktemp /tmp/text-clean-out.XXXXXX.txt)
-		cat > "$_TMP_IN"
+		if [ -n "$TEXT_INLINE" ]; then
+			printf '%s' "$TEXT_INLINE" > "$_TMP_IN"
+		else
+			cat > "$_TMP_IN"
+		fi
 		# Wrap claude in `script` to allocate a PTY: when authenticated via claude.ai
 		# OAuth (no ANTHROPIC_API_KEY), `claude -p` requires a TTY to load credentials,
 		# otherwise it exits immediately with apiKeySource:"none" and empty result.

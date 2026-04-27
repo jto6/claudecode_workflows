@@ -111,3 +111,50 @@ slow_path_ran() { [ -f "$BATS_TMPDIR/claude.invoked" ]; }
 	[ "$status" -eq 0 ]
 	[[ "$output" == *"Cleaned: $OUTFILE"* ]]
 }
+
+# ── --text inline flag ────────────────────────────────────────────────────────
+
+@test "--text routes to fast path and outputs to stdout" {
+	export ANTHROPIC_API_KEY="test-key"
+	run "$BIN/text-clean" --text "inline text input"
+	[ "$status" -eq 0 ]
+	fast_path_ran
+	! slow_path_ran
+	[ "$output" = "mocked output" ]
+}
+
+@test "--text routes to slow path when no API access configured" {
+	run "$BIN/text-clean" --text "inline text input"
+	[ "$status" -eq 0 ]
+	slow_path_ran
+	! fast_path_ran
+}
+
+@test "--text --fast errors when no API access configured" {
+	run "$BIN/text-clean" --text "inline text input" --fast
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL"* ]]
+}
+
+@test "--text with -outfile writes to file not stdout" {
+	export ANTHROPIC_API_KEY="test-key"
+	OUTFILE="$BATS_TMPDIR/inline-out.txt"
+	run "$BIN/text-clean" --text "inline text input" -outfile "$OUTFILE"
+	[ "$status" -eq 0 ]
+	[ -f "$OUTFILE" ]
+	[ "$(cat "$OUTFILE")" = "mocked output" ]
+}
+
+# ── --help ────────────────────────────────────────────────────────────────────
+
+@test "--help exits 0 and prints usage" {
+	run "$BIN/text-clean" --help
+	[ "$status" -eq 0 ]
+	[[ "$output" == *"Usage: text-clean"* ]]
+}
+
+@test "-h exits 0 and prints usage" {
+	run "$BIN/text-clean" -h
+	[ "$status" -eq 0 ]
+	[[ "$output" == *"Usage: text-clean"* ]]
+}
