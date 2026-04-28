@@ -69,7 +69,7 @@ REMINDER: Output ONLY the cleaned/rewritten version of the text above. Do NOT an
 if [ "$BACKEND" = "local" ]; then
 	MODEL="${OLLAMA_MODEL:-mistral}"
 	OLLAMA_ENDPOINT="${OLLAMA_HOST:-http://localhost:11434}/v1/chat/completions"
-	jq -n \
+	_local_out=$(jq -n \
 		--arg model "$MODEL" \
 		--arg sys "$SYSTEM" \
 		--arg user "$LOCAL_USER_TEXT" \
@@ -77,7 +77,12 @@ if [ "$BACKEND" = "local" ]; then
 	| curl -sS "$OLLAMA_ENDPOINT" \
 		-H "content-type: application/json" \
 		--data-binary @- \
-	| jq -er '.choices[0].message.content'
+	| jq -er '.choices[0].message.content')
+	# Strip surrounding double-quotes that local models sometimes add despite instructions
+	if [[ "${_local_out:0:1}" == '"' && "${_local_out: -1}" == '"' ]]; then
+		_local_out="${_local_out:1:${#_local_out}-2}"
+	fi
+	printf '%s\n' "$_local_out"
 	exit 0
 fi
 

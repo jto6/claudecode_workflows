@@ -38,6 +38,7 @@ Options:
   --backend BACKEND  fast-path backend: anthropic (default) or local (Ollama)
   -conversational    conversational tone (default: technical)
   -journal           journal tone
+  -basic             spelling, grammar, and punctuation only (no style changes)
   -outfile FILE      write output to FILE instead of clipboard
 
 Fast path requires ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL.
@@ -51,6 +52,7 @@ EOF
 		--text) TEXT_INLINE="$2"; shift 2 ;;
 		-conversational) TONE="conversational"; PASSTHROUGH+=("$1"); shift ;;
 		-journal)        TONE="journal";        PASSTHROUGH+=("$1"); shift ;;
+		-basic)          TONE="basic";          PASSTHROUGH+=("$1"); shift ;;
 		-outfile)        OUTFILE="$2";          PASSTHROUGH+=("$1" "$2"); shift 2 ;;
 		-*)              PASSTHROUGH+=("$1");   shift ;;
 		*)               HAS_POSITIONAL=1;      PASSTHROUGH+=("$1"); shift ;;
@@ -78,6 +80,7 @@ if [ "$USE_FAST" -eq 1 ]; then
 	case "$TONE" in
 		conversational) PROMPT="$REPO/prompts/text-clean.conversational.md" ;;
 		journal)        PROMPT="$REPO/prompts/text-clean.journal.md" ;;
+		basic)          PROMPT="$REPO/prompts/text-clean.basic.md" ;;
 		*)              PROMPT="$REPO/prompts/text-clean.md" ;;
 	esac
 	BACKEND_ARGS=()
