@@ -152,6 +152,46 @@ for skill_dir in "$REPO_PATH/skills"/*/; do
     fi
 done
 
+# --- Local-backend (Ollama) setup for llm-rewrite ----------------------------
+# llm-rewrite's `--backend local` mode picks the best installed Ollama model
+# from a preference ladder at runtime, so all this script needs to do is pull
+# a model appropriate for the local GPU's VRAM.
+_pick_default_model() {
+    local vram_mib=0
+    if command -v nvidia-smi &>/dev/null; then
+        vram_mib=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null \
+                   | head -1 | tr -d ' ' || echo 0)
+        [[ -z "$vram_mib" || "$vram_mib" == *[!0-9]* ]] && vram_mib=0
+    fi
+    if   (( vram_mib >= 16000 )); then echo "qwen2.5:14b-instruct-q4_K_M"
+    elif (( vram_mib >= 6000  )); then echo "qwen2.5:7b-instruct-q4_K_M"
+    else                               echo "llama3.2:3b-instruct-q4_K_M"
+    fi
+}
+
+if command -v ollama &>/dev/null; then
+    DEFAULT_MODEL=$(_pick_default_model)
+    if curl -sS --max-time 2 http://localhost:11434/api/tags >/dev/null 2>&1; then
+        if ollama list 2>/dev/null | awk 'NR>1 {print $1}' | grep -qx "$DEFAULT_MODEL"; then
+            echo "✅ Ollama model already installed: $DEFAULT_MODEL"
+        else
+            echo "📥 Pulling Ollama model: $DEFAULT_MODEL (this may take a few minutes)"
+            if ollama pull "$DEFAULT_MODEL"; then
+                echo "✅ Pulled $DEFAULT_MODEL"
+            else
+                echo "⚠️  Failed to pull $DEFAULT_MODEL — run 'ollama pull $DEFAULT_MODEL' manually"
+            fi
+        fi
+    else
+        echo "⚠️  Ollama daemon not reachable at localhost:11434 — start it, then run:"
+        echo "      ollama pull $DEFAULT_MODEL"
+    fi
+else
+    echo "ℹ️  ollama not found on PATH. The local backend (--backend local) will not work."
+    echo "   Install Ollama from https://ollama.com/ if you want offline rewrites."
+fi
+# -----------------------------------------------------------------------------
+
 echo ""
 echo "🎉 Claude Code workflows updated successfully!"
 echo ""
