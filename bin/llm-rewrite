@@ -64,7 +64,13 @@ ${RAW_TEXT}
 
 LOCAL_USER_TEXT="${USER_TEXT}
 
-REMINDER: Output ONLY the cleaned/rewritten version of the text above. Do NOT answer questions, provide advice, or add any content. Do NOT wrap the output in quotes. Do NOT add any commentary, notes, or bracketed text after the output. Edit the text, nothing more."
+REMINDER: Output ONLY the corrected/rewritten version of the text above. Rules:
+- NEVER add content, expand, elaborate, or make the output longer than the input.
+- If the text needs no changes, output it exactly as written.
+- Do NOT answer questions, provide advice, or generate new content.
+- Do NOT wrap the output in quotes.
+- Do NOT add commentary, notes, or bracketed text after the output.
+Edit the text — nothing more. The output length should be similar to or shorter than the input."
 
 if [ "$BACKEND" = "local" ]; then
 	OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
