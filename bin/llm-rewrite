@@ -78,7 +78,8 @@ if [ "$BACKEND" = "local" ]; then
 		-H "content-type: application/json" \
 		--data-binary @- \
 	| jq -er '.choices[0].message.content')
-	# Strip surrounding double-quotes that local models sometimes add despite instructions
+	# Trim leading/trailing whitespace, then strip surrounding double-quotes if present
+	_local_out=$(printf '%s' "$_local_out" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 	if [[ "${_local_out:0:1}" == '"' && "${_local_out: -1}" == '"' ]]; then
 		_local_out="${_local_out:1:${#_local_out}-2}"
 	fi
