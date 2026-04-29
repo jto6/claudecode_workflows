@@ -67,17 +67,69 @@ LOCAL_USER_TEXT="${USER_TEXT}
 REMINDER: Output ONLY the cleaned/rewritten version of the text above. Do NOT answer questions, provide advice, or add any content. Do NOT wrap the output in quotes. Do NOT add any commentary, notes, or bracketed text after the output. Edit the text, nothing more."
 
 if [ "$BACKEND" = "local" ]; then
-	MODEL="${OLLAMA_MODEL:-mistral}"
-	OLLAMA_ENDPOINT="${OLLAMA_HOST:-http://localhost:11434}/v1/chat/completions"
-	_local_out=$(jq -n \
+	OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
+	OLLAMA_ENDPOINT="$OLLAMA_HOST/v1/chat/completions"
+
+	# Resolve which Ollama model to use:
+	#   1. If OLLAMA_MODEL is set explicitly, honor it.
+	#   2. Otherwise query the Ollama daemon for installed models and pick the
+	#      first entry from the preference ladder that's actually present.
+	# Preference order (best → worst) for text-clean / bulletize style edits.
+	_PREFERENCE_LADDER=(
+		"qwen2.5:14b-instruct-q4_K_M"
+		"qwen2.5:7b-instruct-q4_K_M"
+		"mistral-nemo:latest"
+		"mistral:latest"
+		"mistral"
+		"llama3.2:3b-instruct-q4_K_M"
+	)
+
+	if [ -n "${OLLAMA_MODEL:-}" ]; then
+		MODEL="$OLLAMA_MODEL"
+	else
+		_installed=$(curl -sS --max-time 2 "$OLLAMA_HOST/api/tags" 2>/dev/null \
+			| jq -r '.models[].name' 2>/dev/null || true)
+		MODEL=""
+		for _candidate in "${_PREFERENCE_LADDER[@]}"; do
+			if printf '%s\n' "$_installed" | grep -qx "$_candidate"; then
+				MODEL="$_candidate"
+				break
+			fi
+		done
+		if [ -z "$MODEL" ]; then
+			echo "llm-rewrite: no preferred Ollama model installed at $OLLAMA_HOST." >&2
+			echo "  Tried: ${_PREFERENCE_LADDER[*]}" >&2
+			echo "  Installed: $(printf '%s' "$_installed" | tr '\n' ' ')" >&2
+			echo "  Pull one of the above (e.g. 'ollama pull qwen2.5:7b-instruct-q4_K_M')" >&2
+			echo "  or set OLLAMA_MODEL explicitly." >&2
+			exit 1
+		fi
+	fi
+	_payload=$(jq -n \
 		--arg model "$MODEL" \
 		--arg sys "$SYSTEM" \
 		--arg user "$LOCAL_USER_TEXT" \
-		'{model: $model, messages: [{role:"system",content:$sys},{role:"user",content:$user}]}' \
-	| curl -sS "$OLLAMA_ENDPOINT" \
+		'{model: $model, messages: [{role:"system",content:$sys},{role:"user",content:$user}]}')
+	_http_code=$(printf '%s' "$_payload" | curl -sS -o /tmp/llm-rewrite.resp -w '%{http_code}' \
+		"$OLLAMA_ENDPOINT" \
 		-H "content-type: application/json" \
-		--data-binary @- \
-	| jq -er '.choices[0].message.content')
+		--data-binary @- || echo "000")
+	_response=$(cat /tmp/llm-rewrite.resp 2>/dev/null || true)
+	rm -f /tmp/llm-rewrite.resp
+	if [ "$_http_code" = "000" ]; then
+		echo "llm-rewrite: cannot reach Ollama at $OLLAMA_ENDPOINT (is the daemon running?)" >&2
+		exit 1
+	fi
+	if [ "$_http_code" != "200" ]; then
+		_err=$(printf '%s' "$_response" | jq -r '.error // .message // .' 2>/dev/null || printf '%s' "$_response")
+		echo "llm-rewrite: Ollama returned HTTP $_http_code (model='$MODEL'): $_err" >&2
+		exit 1
+	fi
+	_local_out=$(printf '%s' "$_response" | jq -er '.choices[0].message.content' 2>/dev/null) || {
+		_err=$(printf '%s' "$_response" | jq -r '.error // .message // .' 2>/dev/null || printf '%s' "$_response")
+		echo "llm-rewrite: unexpected Ollama response (model='$MODEL'): $_err" >&2
+		exit 1
+	}
 	# Strip trailing bracketed commentary (e.g. "[No errors found.]"), trim whitespace,
 	# then strip surrounding double-quotes (model sometimes wraps output despite instructions)
 	_local_out=$(printf '%s' "$_local_out" | sed 's/[[:space:]]*\[[^]]*\][[:space:]]*$//')
