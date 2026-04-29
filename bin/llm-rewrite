@@ -64,7 +64,7 @@ ${RAW_TEXT}
 
 LOCAL_USER_TEXT="${USER_TEXT}
 
-REMINDER: Output ONLY the cleaned/rewritten version of the text above. Do NOT answer questions, provide advice, or add any content. Edit the text, nothing more."
+REMINDER: Output ONLY the cleaned/rewritten version of the text above. Do NOT answer questions, provide advice, or add any content. Do NOT wrap the output in quotes. Do NOT add any commentary, notes, or bracketed text after the output. Edit the text, nothing more."
 
 if [ "$BACKEND" = "local" ]; then
 	MODEL="${OLLAMA_MODEL:-mistral}"
@@ -78,7 +78,9 @@ if [ "$BACKEND" = "local" ]; then
 		-H "content-type: application/json" \
 		--data-binary @- \
 	| jq -er '.choices[0].message.content')
-	# Trim leading/trailing whitespace, then strip surrounding double-quotes if present
+	# Strip trailing bracketed commentary (e.g. "[No errors found.]"), trim whitespace,
+	# then strip surrounding double-quotes (model sometimes wraps output despite instructions)
+	_local_out=$(printf '%s' "$_local_out" | sed 's/[[:space:]]*\[[^]]*\][[:space:]]*$//')
 	_local_out=$(printf '%s' "$_local_out" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 	if [[ "${_local_out:0:1}" == '"' && "${_local_out: -1}" == '"' ]]; then
 		_local_out="${_local_out:1:${#_local_out}-2}"
