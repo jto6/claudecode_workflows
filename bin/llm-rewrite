@@ -90,8 +90,12 @@ if [ "$BACKEND" = "local" ]; then
 		"llama3.2:3b-instruct-q4_K_M"
 	)
 
+	_MODEL_CACHE="/tmp/llm-rewrite-ollama-model"
 	if [ -n "${OLLAMA_MODEL:-}" ]; then
 		MODEL="$OLLAMA_MODEL"
+	# Use cached model if cache is less than 1 hour old
+	elif [ -f "$_MODEL_CACHE" ] && [ $(( $(date +%s) - $(stat -c %Y "$_MODEL_CACHE") )) -lt 3600 ]; then
+		MODEL=$(cat "$_MODEL_CACHE")
 	else
 		_installed=$(curl -sS --max-time 2 "$OLLAMA_HOST/api/tags" 2>/dev/null \
 			| jq -r '.models[].name' 2>/dev/null || true)
@@ -110,6 +114,8 @@ if [ "$BACKEND" = "local" ]; then
 			echo "  or set OLLAMA_MODEL explicitly." >&2
 			exit 1
 		fi
+		echo "llm-rewrite: selected Ollama model '$MODEL'" >&2
+		printf '%s' "$MODEL" > "$_MODEL_CACHE"
 	fi
 	_payload=$(jq -n \
 		--arg model "$MODEL" \
