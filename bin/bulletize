@@ -102,10 +102,18 @@ if [ "$USE_FAST" -eq 1 ]; then
 	fi
 	BACKEND_ARGS=()
 	[ -n "$BACKEND" ] && BACKEND_ARGS=(--backend "$BACKEND")
+	# Local models ignore system-prompt-only instructions more readily; reinforce
+	# the transform goal (and mmap constraint) in the user message via --local-reminder.
+	if [ "$MMAP" -eq 1 ]; then
+		_BULLETIZE_REMINDER='REMINDER: Output ONLY the bullet-formatted version of the text. CRITICAL: Do NOT use "- " on any line — use ONLY tab characters for indentation followed by plain text. No preamble, no fences, no explanation.'
+	else
+		_BULLETIZE_REMINDER='REMINDER: Output ONLY the bullet-formatted version of the text, using tabs for indentation and "- " prefix on every line as shown in the system prompt examples. No preamble, no fences, no explanation.'
+	fi
+	BULLETIZE_EXTRA_ARGS=(--local-reminder "$_BULLETIZE_REMINDER")
 	if [ -n "$TEXT_INLINE" ]; then
 		RESULT=$(printf '%s' "$TEXT_INLINE" \
 			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$CLEAN_PROMPT" \
-			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$BULLETIZE_PROMPT" "$SUFFIX")
+			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "${BULLETIZE_EXTRA_ARGS[@]}" "$BULLETIZE_PROMPT" "$SUFFIX")
 		if [ -n "$OUTFILE" ]; then
 			printf '%s' "$RESULT" > "$OUTFILE"
 			echo "Bulletized: $OUTFILE"
@@ -114,11 +122,11 @@ if [ "$USE_FAST" -eq 1 ]; then
 		fi
 	elif [ "$STDIN_MODE" -eq 1 ]; then
 		"$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$CLEAN_PROMPT" \
-			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$BULLETIZE_PROMPT" "$SUFFIX"
+			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "${BULLETIZE_EXTRA_ARGS[@]}" "$BULLETIZE_PROMPT" "$SUFFIX"
 	else
 		RESULT=$("$CLIP" read \
 			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$CLEAN_PROMPT" \
-			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "$BULLETIZE_PROMPT" "$SUFFIX")
+			| "$REPO/bin/llm-rewrite" "${BACKEND_ARGS[@]}" "${BULLETIZE_EXTRA_ARGS[@]}" "$BULLETIZE_PROMPT" "$SUFFIX")
 		if [ -n "$OUTFILE" ]; then
 			printf '%s' "$RESULT" > "$OUTFILE"
 			echo "Bulletized: $OUTFILE"
