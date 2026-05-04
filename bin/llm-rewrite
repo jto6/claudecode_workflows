@@ -91,6 +91,7 @@ if [ "$BACKEND" = "local" ]; then
 	#      first entry from the preference ladder that's actually present.
 	# Preference order (best → worst) for text-clean / bulletize style edits.
 	_PREFERENCE_LADDER=(
+		"gemma3:12b"
 		"qwen2.5:14b-instruct-q4_K_M"
 		"qwen2.5:7b-instruct-q4_K_M"
 		"mistral-nemo:latest"
