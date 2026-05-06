@@ -155,7 +155,7 @@ if [ "$BACKEND" = "local" ]; then
 	# Strip trailing bracketed commentary (e.g. "[No errors found.]"), trim whitespace,
 	# then strip surrounding double-quotes (model sometimes wraps output despite instructions)
 	_local_out=$(printf '%s' "$_local_out" | sed 's/[[:space:]]*\[[^]]*\][[:space:]]*$//')
-	_local_out=$(printf '%s' "$_local_out" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+	_local_out=$(printf '%s' "$_local_out" | sed 's/[[:space:]]*$//')
 	if [[ "${_local_out:0:1}" == '"' && "${_local_out: -1}" == '"' ]]; then
 		_local_out="${_local_out:1:${#_local_out}-2}"
 	fi
