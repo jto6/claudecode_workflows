@@ -139,7 +139,6 @@
       }
     ]
   },
-  "alwaysThinkingEnabled": true,
   "notifications": {
     "tool_permission_requests": true,
     "idle_timeout_minutes": 30
