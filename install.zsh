@@ -99,16 +99,11 @@ done
 # Merge hooks configuration if settings.json exists
 if [[ -f "$REPO_PATH/hooks/settings_template.json" ]]; then
     if [[ -f "$CLAUDE_SETTINGS" ]]; then
-        # Backup existing settings
         cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.backup"
-        # Merge with new settings
-        jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings_template.json" > "$CLAUDE_SETTINGS.tmp"
-        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
-        echo "✅ Merged workflow hooks (backup created)"
-    else
-        cp "$REPO_PATH/hooks/settings_template.json" "$CLAUDE_SETTINGS"
-        echo "✅ Created workflow hooks configuration"
+        echo "✅ Backed up existing settings.json → settings.json.backup"
     fi
+    cp "$REPO_PATH/hooks/settings_template.json" "$CLAUDE_SETTINGS"
+    echo "✅ Created settings.json from template"
 fi
 
 # Apply environment-specific settings into settings.json
