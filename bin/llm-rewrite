@@ -195,7 +195,7 @@ if [ -n "${ANTHROPIC_CUSTOM_HEADERS:-}" ]; then
 	done <<< "$ANTHROPIC_CUSTOM_HEADERS"
 fi
 
-jq -n \
+_resp=$(jq -n \
 	--arg model "$MODEL" \
 	--arg sys "$SYSTEM" \
 	--arg user "$USER_TEXT" \
@@ -205,5 +205,10 @@ jq -n \
 	-H "anthropic-version: 2023-06-01" \
 	-H "content-type: application/json" \
 	"${HEADER_ARGS[@]}" \
-	--data-binary @- \
-| jq -er '.content[0].text'
+	--data-binary @-)
+_text=$(printf '%s' "$_resp" | jq -er '.content[0].text' 2>/dev/null) || {
+	_err=$(printf '%s' "$_resp" | jq -r '.error.message // .error // .' 2>/dev/null || printf '%s' "$_resp")
+	echo "llm-rewrite: API error: $_err" >&2
+	exit 1
+}
+printf '%s' "$_text"
