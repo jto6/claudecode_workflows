@@ -93,7 +93,7 @@
           },
           {
             "type": "command",
-            "command": "if [ -z \"$tabtitle\" ]; then dir=$(basename \"$PWD\"); printf '\\033]0;%s\\007' \"$dir\" > /dev/tty; else printf '\\033]0;%s\\007' \"$tabtitle\" > /dev/tty; fi"
+            "command": "parent_tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d ' '); if [ -n \"$parent_tty\" ] && [ -e \"/dev/$parent_tty\" ]; then printf '\\033]0;%s\\007' \"${tabtitle:-$(basename \"$PWD\")}\" > \"/dev/$parent_tty\"; fi"
           }
         ]
       }
@@ -122,7 +122,7 @@
           },
           {
             "type": "command",
-            "command": "if [ -z \"$tabtitle\" ]; then dir=$(basename \"$PWD\"); printf '\\033]0;%s\\007' \"$dir\" > /dev/tty; else printf '\\033]0;%s\\007' \"$tabtitle\" > /dev/tty; fi"
+            "command": "parent_tty=$(ps -o tty= -p \"$PPID\" 2>/dev/null | tr -d ' '); if [ -n \"$parent_tty\" ] && [ -e \"/dev/$parent_tty\" ]; then printf '\\033]0;%s\\007' \"${tabtitle:-$(basename \"$PWD\")}\" > \"/dev/$parent_tty\"; fi"
           }
         ]
       }
