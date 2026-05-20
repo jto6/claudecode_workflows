@@ -33,8 +33,8 @@ if ! python3 -c "import pathlib; exit(0 if pathlib.Path('$HOME/dev/utility-scrip
     exit 0
 fi
 
-# Run linter; feed violations back to Claude via exit 2 + JSON systemMessage on stderr.
-OUTPUT=$($LINTER "$FILE_PATH" 2>&1)
+# Run linter with --fix; it auto-fixes what it can, then reports remaining violations.
+OUTPUT=$($LINTER --fix "$FILE_PATH" 2>&1)
 EXIT_CODE=$?
 
 if [[ $EXIT_CODE -ne 0 ]]; then
