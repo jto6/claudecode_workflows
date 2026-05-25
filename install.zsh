@@ -12,6 +12,7 @@ CLAUDE_USER_TEMPLATES="$HOME/.claude/templates"
 CLAUDE_USER_HOOKS="$HOME/.claude/hooks"
 CLAUDE_USER_SKILLS="$HOME/.claude/skills"
 CLAUDE_USER_BIN="$HOME/.claude/bin"
+CLAUDE_USER_RULES="$HOME/.claude/rules"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 CLAUDE_SETTINGS_LOCAL="$HOME/.claude/settings.local.json"
 
@@ -25,6 +26,7 @@ mkdir -p "$CLAUDE_USER_TEMPLATES"
 mkdir -p "$CLAUDE_USER_HOOKS"
 mkdir -p "$CLAUDE_USER_SKILLS"
 mkdir -p "$CLAUDE_USER_BIN"
+mkdir -p "$CLAUDE_USER_RULES"
 
 # Create Python virtual environment for skills dependencies
 if [[ -f "$REPO_PATH/reqs_for_skills.txt" ]]; then
@@ -116,7 +118,14 @@ read "env_choice?Enter choice [1/2/3]: "
 case "$env_choice" in
     1) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.ti.json" > "$CLAUDE_SETTINGS.tmp"
        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
-       echo "✅ Applied TI environment settings" ;;
+       echo "✅ Applied TI environment settings"
+       for rule_file in "$REPO_PATH/rules"/*.md; do
+           if [[ -f "$rule_file" ]]; then
+               rule_name=$(basename "$rule_file")
+               ln -sf "$rule_file" "$CLAUDE_USER_RULES/$rule_name"
+               echo "✅ Linked TI rule: $rule_name"
+           fi
+       done ;;
     2) echo "✅ Home environment — no additional settings needed" ;;
     *) echo "⏭️  Skipped environment selection" ;;
 esac

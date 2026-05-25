@@ -227,5 +227,3 @@ All box lines should show the same width number. If any differ, add or remove sp
 ```
 
 Every line above has exactly 43 display width, with padding added before the closing `│`.
-
-
