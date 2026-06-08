@@ -1,131 +1,157 @@
-# kb-card — Author a Knowledge Base Card
+# kb-card — Author Knowledge Base Cards
 
-Create (or update) a distilled **knowledge-base card** — `<source-dir>/.kb/<stem>.kb.md` —
-from a source, using the area's `.kb/kb.yml` profile. A card is the curated,
-distilled unit of the knowledge base: frontmatter + a one-line essence + core
-concepts (+ key quotes for reflective domains).
+Create or update distilled **knowledge-base cards** — `.kb/*.kb.md` — from
+sources, and record how each directory's sources are divided into cards in a
+per-directory `.kb/cards.yml` manifest. Card granularity is **adaptive-first**:
+the command proposes how to scope cards by analyzing content, with optional
+`kb.yml` overrides and manual review. Re-runs **reconcile** against `cards.yml` —
+they refine decisions, they do not redo them.
 
-This command is **author-side**: it is run by the repo owner inside the repo, and
-the card is committed with that repo. It does **not** index anything — the
-external knowledge-base indexer (`kbi`) reads cards read-only to build the
-cross-repo catalog as a separate step.
+This command is **author-side**: run by the repo owner inside the repo; cards and
+`cards.yml` are committed with that repo. It does **not** index anything — the
+external indexer (`kbi`) reads `*.kb.md` cards read-only to build the cross-repo
+catalog as a separate step (and ignores `cards.yml`).
 
-Card schema and profiles are defined in the kbi repo:
-`/home/jon/dev/kbi/docs/DESIGN_PRINCIPLES_AND_DECISIONS.md` (§5, §6).
+Card schema, profiles, granularity model, and `cards.yml` format are defined in
+`/home/jon/dev/kbi/docs/DESIGN_PRINCIPLES_AND_DECISIONS.md` (§5, §6, §6.4, D14).
 
 ## Usage
 
 ```
-/kb-card [source] [-domain <d>] [-level 1|2|3] [-quotes | -no-quotes] [-update]
+/kb-card [source] [-r] [-plan] [-resegment] [-update]
+         [-domain <d>] [-level 1|2|3] [-quotes | -no-quotes]
 ```
 
-- `source` — a file (e.g. `Plan.md`), a directory, or omitted. If omitted, the
-  **current directory** is the source (the card summarizes the folder).
-- `-domain <d>` — override the domain (otherwise taken from `kb.yml`).
-- `-level 1|2|3` — override the profile's distill level.
-- `-quotes` / `-no-quotes` — force the Key Quotes section on/off, overriding the
-  profile.
-- `-update` — regenerate an existing card at the target path, **preserving its
-  `id`, `slug`, and `created` date**; refresh everything else and bump `updated`.
+- `source` — a file, a directory, or omitted (defaults to the current directory).
+- `-r` — recurse: walk the tree under `source` and author a card per unit.
+- `-plan` — propose/update `cards.yml` (the segmentation) and stop **before**
+  authoring card bodies. Use this for the review pass.
+- `-resegment` — discard the existing boundaries for `source` and re-propose from
+  scratch (use when content changed dramatically).
+- `-update` — refresh the content of existing cards whose source drifted.
+- `-domain` / `-level` / `-quotes` / `-no-quotes` — override domain and the
+  distill profile (level / quotes).
+
+## Concepts (see design doc §6.4)
+
+- **Granularity = a cut across `repo → directory → file → section`.** A card
+  should be one cohesive, self-contained, bounded topic.
+- **Adaptive proposal + declarative override.** The command proposes the cut;
+  `card_unit` (`repo|directory|file|section`) and `card_split` (`auto|never`) in
+  `kb.yml` (inherited per subtree) override it where the author wants control.
+- **`cards.yml`** — the per-directory record of reviewed boundaries (not a
+  forward plan). Re-runs reconcile against it.
+- **Boundaries vs. content.** Boundaries are sticky (in `cards.yml`); content is
+  regenerated. Updating a source refreshes content but keeps the boundary.
 
 ## Instructions
 
-### Step 1: Resolve the source and target path
+### Step 1: Resolve scope and area config
 
-- Determine the source from the argument, or the current working directory if
-  omitted.
-- The card's target path is `<source-dir>/.kb/<stem>.kb.md`, where:
-	- `<source-dir>` is the source file's directory, or the source directory itself.
-	- `<stem>` is the source file's name stem (e.g. `Plan.md` → `Plan`). For a
-	  directory source, prefer a `Plan.md` inside it (`Plan`); otherwise use the
-	  directory's basename.
-- If a card already exists at the target path and `-update` was not given, stop
-  and tell the user to pass `-update` (so an existing card is never silently
-  overwritten and its stable `id` is never lost).
+- Determine the operating scope: a single `source` (file/dir), or a recursive
+  walk of the tree under `source`/cwd when `-r` is given.
+- For each directory in scope, find the nearest ancestor `.kb/kb.yml` and load:
+  `domain`, `profile`, `distill_level`/`quotes`, `seed_tags`, `meta_fields`, and
+  the optional `card_unit` / `card_split` overrides. Resolve the distill behavior
+  with precedence: command flags → explicit `distill_level`/`quotes` → named
+  `profile` → domain default → `standard`.
+- If no `kb.yml` and no `-domain`, ask the user for the domain and use
+  `standard`.
 
-### Step 2: Resolve the area config (`kb.yml`)
+### Step 2: Segment — propose boundaries (adaptive-first), then reconcile
 
-- Walk **up** from the source directory looking for the nearest ancestor that
-  contains `.kb/kb.yml`. Load it: `domain`, `profile`, `distill_level`, `quotes`,
-  `seed_tags`, `meta_fields`.
-- Resolve the effective distill behavior, precedence highest first:
-	1. command flags (`-level`, `-quotes`/`-no-quotes`),
-	2. explicit `distill_level` / `quotes` in `kb.yml`,
-	3. the named `profile` (`standard` = level 2, no quotes; `reflective` = level 2
-	   + quotes; `deep` = level 3 + quotes),
-	4. the domain default (`spiritual`/`personal-dev` → `reflective`, else
-	   `standard`),
-	5. fallback `standard`.
-- `domain` comes from `-domain`, else `kb.yml`. If no `kb.yml` is found and no
-  `-domain` given, ask the user for the domain and use the `standard` profile.
+For each directory in scope, decide how its sources divide into cards:
 
-### Step 3: Gather the existing vocabulary (for tag/term reconciliation)
+1. **Propose (adaptive).** Analyze the directory's sources and propose the set of
+   cards, honoring any declared `card_unit`/`card_split`, otherwise choosing
+   adaptively:
+	- detect the natural atom — a folder of variants of one thing → one card; a
+	  folder of distinct documents → one card each;
+	- split an over-dense / multi-topic unit into per-section cards when
+	  `card_split: auto` or when a single card would lose too much (a unit fails
+	  the cohesion/bounded-size test);
+	- for each proposed card record: a `title`, the `source` (file or directory),
+	  and a `scope` (section identity + a short semantic `signature`) for
+	  section-level cards.
+2. **Reconcile** the proposal against the existing `.kb/cards.yml`:
+	- existing card, `source_hash` unchanged → keep as-is;
+	- source changed, boundary still resolves (validate the `scope`
+	  **semantically** against the new content — section/signature, not page
+	  numbers) → mark **refresh**;
+	- source changed, boundary no longer resolves → break `locked` and mark
+	  **re-segment** (needs review);
+	- new source/section → mark **new** (needs review);
+	- source gone → mark the card **orphan**.
+3. **Review the delta.** Present only the changed entries (new / re-segment /
+   orphan / refresh). Apply the author's adjustments — merge, split, relabel,
+   lock/unlock. (`-resegment <source>` forces step 1 fresh for that source,
+   discarding its old entries.)
+4. **Write `cards.yml`** with the reviewed boundaries (slug, id, file, source,
+   scope, `locked`, `source_hash`). **If `-plan` was given, stop here.**
 
-- Collect the reconciliation vocabulary so the bottom-up tag set stays
-  convergent instead of sprawling:
-	- `seed_tags` from `kb.yml`, plus
-	- the `tags` and `defines` from every sibling card under the area root
-	  (`<area>/**/.kb/*.kb.md`) — read their frontmatter.
-- Keep a map of `term → defining-card-slug` from those `defines` (the term index)
-  for linkification in Step 6.
+`locked` means "never change this boundary silently" — it is still auto-escalated
+to review when content drift invalidates it; it is not immutable.
 
-### Step 4: Distill the source
+### Step 3: Author / refresh cards per `cards.yml`
 
-Apply the `/distill` logic at the resolved level (and `-quotes` when quotes are
-enabled) to produce:
+For each card entry that is new, refresh, or re-segmented:
 
-- a **one-line essence** (the `>` blockquote — the single most important sentence);
-- **Core Concepts** as ruthlessly compressed nested bullets (tabs for nesting);
-- a **Key Quotes** section when quotes are enabled — exact quotes only, grouped
-  under short thematic sub-bullets.
+- **Distill** its scoped source (a whole file/dir, or a single section) using the
+  resolved profile — produce the one-line essence, ruthlessly compressed Core
+  Concepts (tabs for nesting), and a Key Quotes section when quotes are enabled.
+  (Apply the `/distill` logic at the resolved level.)
+- **Reconcile tags.** Gather the vocabulary — `seed_tags` plus the `tags`/`defines`
+  of sibling cards under the area root — and choose 4–8 tags, **reusing** existing
+  tags where they fit and coining new kebab-case tags only when genuinely novel.
+- **Extract meta.** For each key in `meta_fields` (e.g. `scripture`), pull values
+  from the source into a `meta` map.
+- **Assemble frontmatter:** `id` (new UUID via
+  `python3 -c 'import uuid; print(uuid.uuid4())'`; **preserved** for existing
+  cards), `slug` (readable kebab-case, unique; preserved for existing), `title`,
+  `source` (relative to the card's `.kb/`), `domain`, `tags`, `defines` (if any),
+  `builds_on` (only if known — do not invent), `created` (today; kept on update),
+  `updated` (today), `meta`. For a section card, record the section in `meta`
+  (e.g. `meta.section`).
+- **Linkify** known terms best-effort: convert the first occurrence of any term
+  in the gathered term index to `[[defining-card-slug|surface text]]`.
+- **Write** the card to `.kb/<file>.kb.md` (the `file` from `cards.yml`).
 
-For a directory source, distill across its processable files, preferring a
-`Plan.md` or primary document if present.
+### Step 4: Retire orphans and report
 
-### Step 5: Reconcile tags, terms, and meta
+- For orphaned cards, confirm, then delete the `.kb.md` and remove the entry from
+  `cards.yml`.
+- Do **not** run `kbi`. Report: cards created / refreshed / re-segmented /
+  retired; tags reused vs newly coined; and a reminder that the central catalog
+  updates only when the indexer is next run.
 
-- Choose **4–8 tags**. **Reuse** tags from the gathered vocabulary wherever they
-  fit; coin a new kebab-case tag only when genuinely novel. Note which were
-  reused vs newly coined (reported at the end).
-- Optionally identify **0–2 terms this card canonically defines** (`defines`) —
-  concepts this lesson is the natural home for.
-- For each key in `meta_fields` (e.g. `scripture`), extract the corresponding
-  values from the source into a `meta` map.
+## Naming conventions
 
-### Step 6: Assemble the card
+- One card per file/dir: `<stem>.kb.md` (e.g. `Plan.kb.md`); whole-directory card
+  may use the directory basename.
+- Multiple cards from one file (section splits): `<stem>.<section-slug>.kb.md`
+  (e.g. `foo.architecture.kb.md`, `foo.safety.kb.md`), each with the same
+  `source` and a distinct `scope`.
 
-Frontmatter (omit optional fields that are empty):
+## `cards.yml` format
 
-- `id` — a new UUID via `python3 -c 'import uuid; print(uuid.uuid4())'`. For
-  `-update`, **keep the existing `id`**.
-- `slug` — readable kebab-case derived from the title (optionally series-prefixed,
-  e.g. `fall-2025-l07-when-god-interrupts`). Ensure it is unique among existing
-  card slugs. For `-update`, keep the existing `slug`.
-- `title` — the source's title (its H1 / lesson title).
-- `source` — path **relative to the card's `.kb/` directory** (e.g. `../Plan.md`,
-  or `..` for a whole-folder source).
-- `domain`, `tags`, `defines` (if any), `builds_on` (leave empty unless the
-  author knows prerequisite card slugs — do not invent), `created` (today; keep
-  prior value on `-update`), `updated` (today), `meta` (if any).
+```yaml
+# .kb/cards.yml — reviewed segmentation manifest for this directory.
+version: 1
+updated: 2026-06-07
+cards:
+  - slug: sdv-arch-overview
+    id: 7f3a...
+    file: foo.architecture.kb.md
+    source: ../reports/foo.pdf
+    scope:                       # omit for whole-file / whole-directory cards
+      section: "Architecture"
+      signature: "<short topic fingerprint>"
+    title: SDV Architecture Overview
+    locked: true
+    source_hash: sha256:...
+```
 
-Body: `# <title>`, then the `>` essence, then `## Core Concepts`, then
-`## Key Quotes` (only when quotes are enabled).
+## Card body shape
 
-### Step 7: Linkify known terms (best-effort)
-
-- For each term in the gathered term index that appears in the body, convert its
-  **first** occurrence to `[[defining-card-slug|surface text]]`. Skip any term
-  this card itself defines. Leave the prose reading naturally.
-
-### Step 8: Write the card
-
-- Write the card to the target path, creating `.kb/` if needed. On `-update`,
-  overwrite while preserving `id`/`slug`/`created`.
-- Do **not** run `kbi`. Remind the user that refreshing the catalog (running the
-  indexer) is a separate step they control.
-
-### Output
-
-Confirm: `Card: <path>`, the resolved domain + profile, the tags **reused** vs
-**newly coined**, and any `defines`/`builds_on`. Note that the central catalog
-will reflect this card the next time the indexer runs.
+`# <title>`, then the `>` essence (one sentence), then `## Core Concepts` (nested
+bullets), then `## Key Quotes` (only when quotes are enabled).
