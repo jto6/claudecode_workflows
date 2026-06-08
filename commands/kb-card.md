@@ -19,16 +19,23 @@ Card schema, profiles, granularity model, and `cards.yml` format are defined in
 
 ```
 /kb-card [source] [-r] [-plan] [-resegment] [-update]
+         [-density coarse|normal|fine|exhaustive] [-cards <N>]
          [-domain <d>] [-level 1|2|3] [-quotes | -no-quotes]
 ```
 
 - `source` — a file, a directory, or omitted (defaults to the current directory).
 - `-r` — recurse: walk the tree under `source` and author a card per unit.
 - `-plan` — propose/update `cards.yml` (the segmentation) and stop **before**
-  authoring card bodies. Use this for the review pass.
+  authoring card bodies. **This is the review/adjustment gate** — see Step 2.
 - `-resegment` — discard the existing boundaries for `source` and re-propose from
   scratch (use when content changed dramatically).
 - `-update` — refresh the content of existing cards whose source drifted.
+- `-density coarse|normal|fine|exhaustive` — how *deep* to partition (themes →
+  section groups → sections → subsections). Overrides the area's `card_density`.
+- `-cards <N>` — a **maximum** card count (a ceiling, never a quota): partitioning
+  stops at the finest *meaningful* boundaries and will not invent or fragment
+  topics to reach N; if a depth would exceed N, the least-distinct boundaries are
+  merged.
 - `-domain` / `-level` / `-quotes` / `-no-quotes` — override domain and the
   distill profile (level / quotes).
 
@@ -39,6 +46,11 @@ Card schema, profiles, granularity model, and `cards.yml` format are defined in
 - **Adaptive proposal + declarative override.** The command proposes the cut;
   `card_unit` (`repo|directory|file|section`) and `card_split` (`auto|never`) in
   `kb.yml` (inherited per subtree) override it where the author wants control.
+- **Depth (density).** `card_density` (`coarse|normal|fine|exhaustive`) sets how
+  deep the cuts go; `-density`/`-cards` override per run (`-cards` is a max, not a
+  quota). Depth may be non-uniform — a `density_overrides` entry in `cards.yml`
+  raises/lowers it for one `(source, section)` while the rest uses the global
+  `density`.
 - **`cards.yml`** — the per-directory record of reviewed boundaries (not a
   forward plan). Re-runs reconcile against it.
 - **Boundaries vs. content.** Boundaries are sticky (in `cards.yml`); content is
@@ -52,9 +64,12 @@ Card schema, profiles, granularity model, and `cards.yml` format are defined in
   walk of the tree under `source`/cwd when `-r` is given.
 - For each directory in scope, find the nearest ancestor `.kb/kb.yml` and load:
   `domain`, `profile`, `distill_level`/`quotes`, `seed_tags`, `meta_fields`, and
-  the optional `card_unit` / `card_split` overrides. Resolve the distill behavior
-  with precedence: command flags → explicit `distill_level`/`quotes` → named
-  `profile` → domain default → `standard`.
+  the optional `card_unit` / `card_split` / `card_density` overrides. Resolve the
+  distill behavior with precedence: command flags → explicit `distill_level`/`quotes`
+  → named `profile` → domain default → `standard`.
+- Resolve the effective **density**: `-density` flag → `kb.yml card_density` →
+  `normal`. Note any `-cards N` ceiling. Per-section `density_overrides` recorded in
+  `cards.yml` take precedence within their `(source, section)` scope.
 - If no `kb.yml` and no `-domain`, ask the user for the domain and use
   `standard`.
 
@@ -70,6 +85,11 @@ For each directory in scope, decide how its sources divide into cards:
 	- split an over-dense / multi-topic unit into per-section cards when
 	  `card_split: auto` or when a single card would lose too much (a unit fails
 	  the cohesion/bounded-size test);
+	- choose the **depth** of the split from the effective density — cut deeper into
+	  the section/subsection hierarchy for `fine`/`exhaustive`, shallower (merged
+	  themes) for `coarse`. Apply per-section `density_overrides` within their
+	  scope. Never exceed a `-cards N` ceiling, and never split past the finest
+	  *meaningful* boundary just to add cards (cohesion is the floor);
 	- for each proposed card record: a `title`, the `source` (file or directory),
 	  and a `scope` (section identity + a short semantic `signature`) for
 	  section-level cards.
@@ -82,12 +102,16 @@ For each directory in scope, decide how its sources divide into cards:
 	  **re-segment** (needs review);
 	- new source/section → mark **new** (needs review);
 	- source gone → mark the card **orphan**.
-3. **Review the delta.** Present only the changed entries (new / re-segment /
-   orphan / refresh). Apply the author's adjustments — merge, split, relabel,
-   lock/unlock. (`-resegment <source>` forces step 1 fresh for that source,
-   discarding its old entries.)
-4. **Write `cards.yml`** with the reviewed boundaries (slug, id, file, source,
-   scope, `locked`, `source_hash`). **If `-plan` was given, stop here.**
+3. **Review the delta (the manual adjustment gate).** Present only the changed
+   entries (new / re-segment / orphan / refresh). This is where the author steers
+   segmentation — merge, split, relabel, lock/unlock, and **adjust depth**: change
+   the global `density`, or go deeper/shallower on specific sections by adding a
+   `density_overrides` entry (non-uniform depth). (`-resegment <source>` forces step
+   1 fresh for that source, discarding its old entries.) With `-plan`, this is the
+   explicit stop for review before any card body is written.
+4. **Write `cards.yml`** with the reviewed result — the effective `density`, any
+   `density_overrides`, and the card entries (slug, id, file, source, scope,
+   `locked`, `source_hash`). **If `-plan` was given, stop here.**
 
 `locked` means "never change this boundary silently" — it is still auto-escalated
 to review when content drift invalidates it; it is not immutable.
@@ -138,6 +162,11 @@ For each card entry that is new, refresh, or re-segmented:
 # .kb/cards.yml — reviewed segmentation manifest for this directory.
 version: 1
 updated: 2026-06-07
+density: normal                  # effective depth (from kb.yml/-run)
+density_overrides:               # optional: non-uniform depth, by (source, section)
+  - source: ../reports/foo.pdf
+    section: "Architecture"
+    density: fine
 cards:
   - slug: sdv-arch-overview
     id: 7f3a...
