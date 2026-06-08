@@ -12,8 +12,9 @@ This command is **author-side**: run by the repo owner inside the repo; cards an
 external indexer (`kbi`) reads `*.kb.md` cards read-only to build the cross-repo
 catalog as a separate step (and ignores `cards.yml`).
 
-Card schema, profiles, granularity model, and `cards.yml` format are defined in
-`/home/jon/dev/kbi/docs/DESIGN_PRINCIPLES_AND_DECISIONS.md` (§5, §6, §6.4, D14).
+Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
+`/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
+`/home/jon/dev/kbi/docs/DESIGN_PRINCIPLES_AND_DECISIONS.md`.
 
 ## Usage
 
@@ -39,7 +40,7 @@ Card schema, profiles, granularity model, and `cards.yml` format are defined in
 - `-domain` / `-level` / `-quotes` / `-no-quotes` — override domain and the
   distill profile (level / quotes).
 
-## Concepts (see design doc §6.4)
+## Concepts (see `REFERENCE.md` §4)
 
 - **Granularity = a cut across `repo → directory → file → section`.** A card
   should be one cohesive, self-contained, bounded topic.
