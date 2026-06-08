@@ -29,7 +29,7 @@ commands/
 ├── bulletize.md        # /bulletize command  ← references prompts/bulletize.md
 ├── commit.md           # /commit command
 ├── drawio-to-svg.md    # /drawio-to-svg command
-├── kb-import.md        # /kb-import command
+├── kb-card.md          # /kb-card command
 ├── md-to-pdf.md        # /md-to-pdf command
 └── text-clean.md       # /text-clean command  ← references prompts/text-clean*.md
 ```
@@ -150,7 +150,7 @@ Required tools/packages...
 - `/commit` — interactive atomic commit workflow with testing
 - `/distill` — extract core concepts from any source (URL, image, video, or text) into a concise markdown file
 - `/drawio-to-svg` — convert Draw.io files to SVG format with smart batch processing
-- `/kb-import` — import files or URLs to create rich markdown knowledge base files
+- `/kb-card` — author distilled knowledge-base cards (`.kb/*.kb.md`) from sources
 - `/md-to-pdf` — convert markdown files to professionally formatted PDFs
 - `/text-clean` — grammar, clarity, and conciseness editor; `bin/text-clean` is the fast-path router
 
