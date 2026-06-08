@@ -19,18 +19,22 @@ Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
 ## Usage
 
 ```
-/kb-card [source] [-r] [-plan] [-resegment] [-update]
+/kb-card [source | <url>] [-r] [-plan] [-resegment] [-update] [-visual]
          [-density coarse|normal|fine|exhaustive] [-cards <N>]
          [-domain <d>] [-level 1|2|3] [-quotes | -no-quotes]
 ```
 
-- `source` — a file, a directory, or omitted (defaults to the current directory).
+- `source` — a file, a directory, a **URL**, or omitted (defaults to the current
+  directory). A URL is captured to a local transcript first (see Step 0).
 - `-r` — recurse: walk the tree under `source` and author a card per unit.
 - `-plan` — propose/update `cards.yml` (the segmentation) and stop **before**
   authoring card bodies. **This is the review/adjustment gate** — see Step 2.
 - `-resegment` — discard the existing boundaries for `source` and re-propose from
   scratch (use when content changed dramatically).
 - `-update` — refresh the content of existing cards whose source drifted.
+- `-visual` — **(planned, not implemented)** request multimodal capture of a video
+  source (transcript + on-screen text + visual descriptions). Until implemented,
+  reject with a notice; default capture is transcript-only.
 - `-density coarse|normal|fine|exhaustive` — how *deep* to partition (themes →
   section groups → sections → subsections). Overrides the area's `card_density`.
 - `-cards <N>` — a **maximum** card count (a ceiling, never a quota): partitioning
@@ -58,6 +62,26 @@ Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
   regenerated. Updating a source refreshes content but keeps the boundary.
 
 ## Instructions
+
+### Step 0: Capture a remote source (URL)
+
+If `source` is a URL, first acquire a local source document, then run the normal
+steps over that local file:
+
+- Fetch the **transcript** via `/distill`'s URL/YouTube support (spoken text).
+- Write it as a **visible** local file in the target directory, named from a slug
+  (e.g. a date-prefixed slug), with the URL and any metadata (speaker, date) in its
+  frontmatter. This file is the directory's source content — browsable and
+  re-segmentable; the card sidecars it in `.kb/`.
+- Scan the transcript for on-screen-visual references ("as you can see on the
+  slide", "this chart/diagram", "on the screen"); if present, **warn** that
+  transcript-only capture may be lossy and suggest `-visual`.
+- `-visual` (multimodal: transcript + OCR'd on-screen text + short visual
+  descriptions) is **not yet implemented** — reject it with a notice for now.
+- The resulting card's `source` lists the **URL first** (canonical) and the local
+  transcript second; record `meta.capture: transcript`.
+
+Then continue from Step 1 with the captured local file as the source.
 
 ### Step 1: Resolve scope and area config
 
