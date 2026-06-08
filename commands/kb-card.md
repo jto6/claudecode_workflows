@@ -95,8 +95,22 @@ Then continue from Step 1 with the captured local file as the source.
 - Resolve the effective **density**: `-density` flag → `kb.yml card_density` →
   `normal`. Note any `-cards N` ceiling. Per-section `density_overrides` recorded in
   `cards.yml` take precedence within their `(source, section)` scope.
-- If no `kb.yml` and no `-domain`, ask the user for the domain and use
-  `standard`.
+- **First-run bootstrap.** `.kb/` directories are created automatically as needed
+  — never require the user to pre-create them. If **no `.kb/kb.yml`** is found
+  anywhere up the tree, create one at the **root of the current scope** (the
+  `source` directory, or the `-r` root):
+	- If `-domain` was given, write a minimal `kb.yml` (that `domain` + the domain's
+	  default profile) without prompting.
+	- Otherwise ask a few short questions and write the answers:
+		- **domain** (required) — e.g. `spiritual`, `technical`, `finance`.
+		- **include key quotes?** — yes → `profile: reflective`, no → `standard`
+		  (default inferred from the domain: `spiritual` / `personal-dev` →
+		  reflective).
+		- **seed tags** (optional) — a few anchor tags, or skip.
+	- Confirm the location before writing, so running inside a sub-directory of a
+	  larger area doesn't root the area too deep (offer a parent directory when the
+	  area is bigger than the current folder).
+	- Then proceed using the newly created `kb.yml`.
 
 ### Step 2: Segment — propose boundaries (adaptive-first), then reconcile
 
