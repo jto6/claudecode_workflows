@@ -111,14 +111,15 @@ fi
 # Apply environment-specific settings into settings.json
 echo ""
 echo "⚙️  Select environment:"
-echo "  1) TI (work) — adds Opus 4.7 → 4.6 model remap for TI gateway"
-echo "  2) Home"
-echo "  3) Skip"
-read "env_choice?Enter choice [1/2/3]: "
+echo "  1) TI Linux (work)  — NVM node paths, TI gateway, CA cert, statusline"
+echo "  2) TI Mac (work)    — /usr/local node paths, TI gateway, no CA cert"
+echo "  3) Home"
+echo "  4) Skip"
+read "env_choice?Enter choice [1/2/3/4]: "
 case "$env_choice" in
     1) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.ti.json" > "$CLAUDE_SETTINGS.tmp"
        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
-       echo "✅ Applied TI environment settings"
+       echo "✅ Applied TI Linux environment settings"
        for rule_file in "$REPO_PATH/rules"/*.md; do
            if [[ -f "$rule_file" ]]; then
                rule_name=$(basename "$rule_file")
@@ -126,7 +127,17 @@ case "$env_choice" in
                echo "✅ Linked TI rule: $rule_name"
            fi
        done ;;
-    2) echo "✅ Home environment — no additional settings needed" ;;
+    2) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.mac.json" > "$CLAUDE_SETTINGS.tmp"
+       mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
+       echo "✅ Applied TI Mac environment settings"
+       for rule_file in "$REPO_PATH/rules"/*.md; do
+           if [[ -f "$rule_file" ]]; then
+               rule_name=$(basename "$rule_file")
+               ln -sf "$rule_file" "$CLAUDE_USER_RULES/$rule_name"
+               echo "✅ Linked TI rule: $rule_name"
+           fi
+       done ;;
+    3) echo "✅ Home environment — no additional settings needed" ;;
     *) echo "⏭️  Skipped environment selection" ;;
 esac
 
