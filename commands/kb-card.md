@@ -2,18 +2,20 @@
 
 Create or update distilled **knowledge-base cards** — `.kb/*.kb.md` — from
 sources, and record how each directory's sources are divided into cards in a
-per-directory `.kb/cards.yml` manifest. Card granularity is **adaptive-first**:
-the command proposes how to scope cards by analyzing content, with optional
-`kb.yml` overrides and manual review. Re-runs **reconcile** against `cards.yml` —
-they refine decisions, they do not redo them.
+per-directory `.kb/segmentation.yml` manifest. Card granularity is
+**adaptive-first**: the command proposes how to scope cards by analyzing
+content, with optional `kb.yml` overrides and manual review. Re-runs
+**reconcile** against `segmentation.yml` — they refine decisions, they do not
+redo them.
 
-This command is **author-side**: run by the repo owner inside the repo; cards and
-`cards.yml` are committed with that repo. It does **not** index anything — the
-external indexer (`kbi`) reads `*.kb.md` cards read-only to build the cross-repo
-catalog as a separate step (and ignores `cards.yml`).
+This command is **author-side**: run by the repo owner inside the repo; cards
+and `segmentation.yml` are committed with that repo. It does **not** index
+anything — the external indexer (`kbi`) reads `*.kb.md` cards read-only to
+build the cross-repo catalog as a separate step (and ignores
+`segmentation.yml`).
 
-Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
-`/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
+Full reference for the card schema, `kb.yml`, `segmentation.yml`, and this
+command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
 `/home/jon/dev/kbi/docs/DESIGN_PRINCIPLES_AND_DECISIONS.md`.
 
 ## Usage
@@ -21,14 +23,16 @@ Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
 ```
 /kb-card [source | <url>] [-r] [-plan] [-resegment] [-update] [-visual]
          [-density coarse|normal|fine|exhaustive] [-cards <N>]
+         [-file-summary | -no-file-summary]
          [-domain <d>] [-level 1|2|3] [-quotes | -no-quotes]
 ```
 
 - `source` — a file, a directory, a **URL**, or omitted (defaults to the current
   directory). A URL is captured to a local transcript first (see Step 0).
 - `-r` — recurse: walk the tree under `source` and author a card per unit.
-- `-plan` — propose/update `cards.yml` (the segmentation) and stop **before**
-  authoring card bodies. **This is the review/adjustment gate** — see Step 2.
+- `-plan` — propose/update `segmentation.yml` (the segmentation) and stop
+  **before** authoring card bodies. **This is the review/adjustment gate** —
+  see Step 2.
 - `-resegment` — discard the existing boundaries for `source` and re-propose from
   scratch (use when content changed dramatically).
 - `-update` — refresh the content of existing cards whose source drifted.
@@ -41,6 +45,11 @@ Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
   stops at the finest *meaningful* boundaries and will not invent or fragment
   topics to reach N; if a depth would exceed N, the least-distinct boundaries are
   merged.
+- `-file-summary` / `-no-file-summary` — per-run override of the area's
+  `kb.yml file_summary` setting. When effective, author a `kind: file_summary`
+  card per source whose section split yields ≥2 topic cards (see Step 3a). The
+  N=1 short-circuit always applies: a source with only one topic card never
+  gets a separate summary card.
 - `-domain` / `-level` / `-quotes` / `-no-quotes` — override domain and the
   distill profile (level / quotes).
 
@@ -53,13 +62,20 @@ Full reference for the card schema, `kb.yml`, `cards.yml`, and this command:
   `kb.yml` (inherited per subtree) override it where the author wants control.
 - **Depth (density).** `card_density` (`coarse|normal|fine|exhaustive`) sets how
   deep the cuts go; `-density`/`-cards` override per run (`-cards` is a max, not a
-  quota). Depth may be non-uniform — a `density_overrides` entry in `cards.yml`
-  raises/lowers it for one `(source, section)` while the rest uses the global
-  `density`.
-- **`cards.yml`** — the per-directory record of reviewed boundaries (not a
-  forward plan). Re-runs reconcile against it.
-- **Boundaries vs. content.** Boundaries are sticky (in `cards.yml`); content is
-  regenerated. Updating a source refreshes content but keeps the boundary.
+  quota). Depth may be non-uniform — a `density_overrides` entry in
+  `segmentation.yml` raises/lowers it for one `(source, section)` while the rest
+  uses the global `density`.
+- **`segmentation.yml`** — the per-directory record of reviewed boundaries (not
+  a forward plan). Re-runs reconcile against it. Renamed from `cards.yml` per
+  D21; carries segmentation state (signature, locked, source_hash, density),
+  not a card index.
+- **Boundaries vs. content.** Boundaries are sticky (in `segmentation.yml`);
+  content is regenerated. Updating a source refreshes content but keeps the
+  boundary.
+- **Card roles (`kind`).** A card with `kind: file_summary` distills the source
+  *as a whole* (one card per source, opt-in via `kb.yml file_summary` or the
+  `-file-summary` flag, only when the source produces ≥2 topic cards). All
+  other cards are topic cards (no `kind` field). See Step 3a.
 
 ## Instructions
 
@@ -89,12 +105,15 @@ Then continue from Step 1 with the captured local file as the source.
   walk of the tree under `source`/cwd when `-r` is given.
 - For each directory in scope, find the nearest ancestor `.kb/kb.yml` and load:
   `domain`, `profile`, `distill_level`/`quotes`, `seed_tags`, `meta_fields`, and
-  the optional `card_unit` / `card_split` / `card_density` overrides. Resolve the
-  distill behavior with precedence: command flags → explicit `distill_level`/`quotes`
-  → named `profile` → domain default → `standard`.
+  the optional `card_unit` / `card_split` / `card_density` / `file_summary`
+  overrides. Resolve the distill behavior with precedence: command flags →
+  explicit `distill_level`/`quotes` → named `profile` → domain default →
+  `standard`.
 - Resolve the effective **density**: `-density` flag → `kb.yml card_density` →
-  `normal`. Note any `-cards N` ceiling. Per-section `density_overrides` recorded in
-  `cards.yml` take precedence within their `(source, section)` scope.
+  `normal`. Note any `-cards N` ceiling. Per-section `density_overrides` recorded
+  in `segmentation.yml` take precedence within their `(source, section)` scope.
+- Resolve **file_summary**: `-file-summary`/`-no-file-summary` flag → `kb.yml
+  file_summary` (`auto|on|off`) → `auto`. `auto` currently resolves to `on`.
 - **First-run bootstrap.** `.kb/` directories are created automatically as needed
   — never require the user to pre-create them. If **no `.kb/kb.yml`** is found
   anywhere up the tree, create one at the **root of the current scope** (the
@@ -132,7 +151,7 @@ For each directory in scope, decide how its sources divide into cards:
 	- for each proposed card record: a `title`, the `source` (file or directory),
 	  and a `scope` (section identity + a short semantic `signature`) for
 	  section-level cards.
-2. **Reconcile** the proposal against the existing `.kb/cards.yml`:
+2. **Reconcile** the proposal against the existing `.kb/segmentation.yml`:
 	- existing card, `source_hash` unchanged → keep as-is;
 	- source changed, boundary still resolves (validate the `scope`
 	  **semantically** against the new content — section/signature, not page
@@ -148,14 +167,15 @@ For each directory in scope, decide how its sources divide into cards:
    `density_overrides` entry (non-uniform depth). (`-resegment <source>` forces step
    1 fresh for that source, discarding its old entries.) With `-plan`, this is the
    explicit stop for review before any card body is written.
-4. **Write `cards.yml`** with the reviewed result — the effective `density`, any
-   `density_overrides`, and the card entries (slug, id, file, source, scope,
-   `locked`, `source_hash`). **If `-plan` was given, stop here.**
+4. **Write `segmentation.yml`** with the reviewed result — the effective
+   `density`, any `density_overrides`, and the card entries (slug, id, file,
+   source, scope, `locked`, `source_hash`). **If `-plan` was given, stop
+   here.**
 
 `locked` means "never change this boundary silently" — it is still auto-escalated
 to review when content drift invalidates it; it is not immutable.
 
-### Step 3: Author / refresh cards per `cards.yml`
+### Step 3: Author / refresh cards per `segmentation.yml`
 
 For each card entry that is new, refresh, or re-segmented:
 
@@ -174,31 +194,68 @@ For each card entry that is new, refresh, or re-segmented:
   `source` (relative to the card's `.kb/`), `domain`, `tags`, `defines` (if any),
   `builds_on` (only if known — do not invent), `created` (today; kept on update),
   `updated` (today), `meta`. For a section card, record the section in `meta`
-  (e.g. `meta.section`).
+  (e.g. `meta.section`). Topic cards omit `kind`.
 - **Linkify** known terms best-effort: convert the first occurrence of any term
   in the gathered term index to `[[defining-card-slug|surface text]]`.
-- **Write** the card to `.kb/<file>.kb.md` (the `file` from `cards.yml`).
+- **Write** the card to `.kb/<file>.kb.md` (the `file` from `segmentation.yml`).
+
+### Step 3a: Author / refresh file-summary cards (when enabled)
+
+When the effective `file_summary` is `on` (default), for each source whose
+section split yields ≥2 topic cards (after Step 3), author or refresh a
+**file-summary card** distilling the source as a whole:
+
+- **Skip the N=1 short-circuit.** A source whose split yields exactly one topic
+  card never gets a separate summary — the lone topic card's essence already
+  serves as the file's summary.
+- **At most one** file-summary card per source. If one already exists in
+  `segmentation.yml` for this source, refresh it; otherwise create one.
+- **Distill** the *whole* source (not a section) at the same resolved profile.
+  The body should articulate the file's overall content/argument, **not** a
+  TOC of the topic cards. The `>` essence is one sentence on what the file is
+  conveying as a unit.
+- **Filename:** the bare-stem slot `<source-stem>.kb.md`. Topic cards alongside
+  one always take `<source-stem>.<section-slug>.kb.md`. If a topic card was
+  previously written to the bare-stem slot, rename it to its
+  `<section-slug>` form (and update its `file:` entry in `segmentation.yml`).
+- **Frontmatter:** the same fields as a topic card, plus `kind: file_summary`.
+  No `meta.section` (the scope is the whole file). Tags should reflect the
+  file's overall themes; reconcile against the same vocabulary.
+- **Refresh dependency:** when any topic card under the same source is
+  refreshed or re-segmented, regenerate the file-summary in the same pass.
+- **`segmentation.yml` entry:** record the file-summary card alongside its
+  topic siblings, with `scope` omitted (whole-file scope) — this lets the
+  manifest carry boundary state for it (signature/locked/source_hash) the
+  same as any other card.
+- When `file_summary` resolves to `off` (or `-no-file-summary` is given), do
+  not create new file-summary cards; existing ones remain unless the author
+  removes them. (Removing a file-summary card is treated like any retirement
+  in Step 4.)
 
 ### Step 4: Retire orphans and report
 
 - For orphaned cards, confirm, then delete the `.kb.md` and remove the entry from
-  `cards.yml`.
+  `segmentation.yml`.
 - Do **not** run `kbi`. Report: cards created / refreshed / re-segmented /
   retired; tags reused vs newly coined; and a reminder that the central catalog
   updates only when the indexer is next run.
 
 ## Naming conventions
 
-- One card per file/dir: `<stem>.kb.md` (e.g. `Plan.kb.md`); whole-directory card
-  may use the directory basename.
+- One card per file/dir, no file-summary: `<stem>.kb.md` (e.g. `Plan.kb.md`);
+  whole-directory card may use the directory basename.
 - Multiple cards from one file (section splits): `<stem>.<section-slug>.kb.md`
   (e.g. `foo.architecture.kb.md`, `foo.safety.kb.md`), each with the same
   `source` and a distinct `scope`.
+- The **bare-stem slot `<stem>.kb.md` is reserved for the file-summary card**
+  (Step 3a) when one exists. Whenever a file-summary is present for a source,
+  *every* topic card from that source must take the
+  `<stem>.<section-slug>.kb.md` form — the bare stem is never shared.
 
-## `cards.yml` format
+## `segmentation.yml` format
 
 ```yaml
-# .kb/cards.yml — reviewed segmentation manifest for this directory.
+# .kb/segmentation.yml — reviewed segmentation manifest for this directory.
 version: 1
 updated: 2026-06-07
 density: normal                  # effective depth (from kb.yml/-run)
@@ -207,6 +264,13 @@ density_overrides:               # optional: non-uniform depth, by (source, sect
     section: "Architecture"
     density: fine
 cards:
+  - slug: foo                    # file-summary card for ../reports/foo.pdf
+    id: 1a2b...
+    file: foo.kb.md              # bare-stem slot — reserved for the summary
+    kind: file_summary
+    source: ../reports/foo.pdf
+    title: Foo
+    source_hash: sha256:...
   - slug: sdv-arch-overview
     id: 7f3a...
     file: foo.architecture.kb.md
