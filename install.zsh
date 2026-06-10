@@ -74,15 +74,7 @@ if [[ -f "$REPO_PATH/css/pdf-style.css" ]]; then
     echo "✅ Linked default PDF styling template"
 fi
 
-# Install global CLAUDE.md instructions
-if [[ -f "$REPO_PATH/templates/CLAUDE.md" ]]; then
-    if [[ -L "$HOME/.claude/CLAUDE.md" ]]; then
-        echo "🔄 Updated global Claude Code instructions"
-    else
-        echo "✅ Installed global Claude Code instructions"
-    fi
-    ln -sf "$REPO_PATH/templates/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
-fi
+# Install global CLAUDE.md instructions (target set per environment below)
 
 # Create symlinks to hook scripts (so they auto-update with git pulls)
 for hook_file in "$REPO_PATH/hooks"/*.sh; do
@@ -120,25 +112,16 @@ case "$env_choice" in
     1) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.ti.json" > "$CLAUDE_SETTINGS.tmp"
        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
        echo "✅ Applied TI Linux environment settings"
-       for rule_file in "$REPO_PATH/rules"/*.md; do
-           if [[ -f "$rule_file" ]]; then
-               rule_name=$(basename "$rule_file")
-               ln -sf "$rule_file" "$CLAUDE_USER_RULES/$rule_name"
-               echo "✅ Linked TI rule: $rule_name"
-           fi
-       done ;;
+       ln -sf "$REPO_PATH/templates/CLAUDE.ti.md" "$HOME/.claude/CLAUDE.md"
+       echo "✅ Linked TI global Claude Code instructions (CLAUDE.ti.md)" ;;
     2) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.mac.json" > "$CLAUDE_SETTINGS.tmp"
        mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
        echo "✅ Applied TI Mac environment settings"
-       for rule_file in "$REPO_PATH/rules"/*.md; do
-           if [[ -f "$rule_file" ]]; then
-               rule_name=$(basename "$rule_file")
-               ln -sf "$rule_file" "$CLAUDE_USER_RULES/$rule_name"
-               echo "✅ Linked TI rule: $rule_name"
-           fi
-       done ;;
-    3) echo "✅ Home environment — no additional settings needed" ;;
-    *) echo "⏭️  Skipped environment selection" ;;
+       ln -sf "$REPO_PATH/templates/CLAUDE.ti.md" "$HOME/.claude/CLAUDE.md"
+       echo "✅ Linked TI global Claude Code instructions (CLAUDE.ti.md)" ;;
+    3) ln -sf "$REPO_PATH/templates/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+       echo "✅ Linked home global Claude Code instructions (CLAUDE.md)" ;;
+    *) echo "⏭️  Skipped environment selection (CLAUDE.md symlink not updated)" ;;
 esac
 
 # Create settings.local.json for new machines
