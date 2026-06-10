@@ -138,6 +138,23 @@ For each directory in scope, decide how its sources divide into cards:
 1. **Propose (adaptive).** Analyze the directory's sources and propose the set of
    cards, honoring any declared `card_unit`/`card_split`, otherwise choosing
    adaptively:
+	- **Near-duplicate / refinement scan (before per-file assignment).** Compare
+	  all files in the directory pairwise for similarity signals:
+		- filename versioning patterns (e.g. `_v1`/`_v2`, `_old`/`_new`,
+		  `_draft`/`_final`, date suffixes, numeric suffixes);
+		- file sizes within a factor of ~2 of each other;
+		- overlapping opening headings or first paragraphs (read the first
+		  ~20 lines of each file to compare structure and opening content).
+	  Classify pairs as:
+		- **duplicate** — content is essentially identical (same headings,
+		  same core sentences); mtime may differ only slightly;
+		- **refinement** — one is a clear superset/evolution of the other
+		  (later mtime, same topic, some content added or changed, but
+		  clearly the same document).
+	  For a detected pair, propose **one card** for the **canonical** file
+	  (latest mtime, or higher version/final suffix), and record the superseded
+	  file(s) in that card entry's `supersedes` list. Flag the pair at the
+	  review gate (Step 2.3) so the author can confirm or override.
 	- detect the natural atom — a folder of variants of one thing → one card; a
 	  folder of distinct documents → one card each;
 	- split an over-dense / multi-topic unit into per-section cards when
@@ -161,12 +178,16 @@ For each directory in scope, decide how its sources divide into cards:
 	- new source/section → mark **new** (needs review);
 	- source gone → mark the card **orphan**.
 3. **Review the delta (the manual adjustment gate).** Present only the changed
-   entries (new / re-segment / orphan / refresh). This is where the author steers
-   segmentation — merge, split, relabel, lock/unlock, and **adjust depth**: change
-   the global `density`, or go deeper/shallower on specific sections by adding a
-   `density_overrides` entry (non-uniform depth). (`-resegment <source>` forces step
-   1 fresh for that source, discarding its old entries.) With `-plan`, this is the
-   explicit stop for review before any card body is written.
+   entries (new / re-segment / orphan / refresh). Also surface any detected
+   **near-duplicate or refinement pairs** here — show which file is proposed as
+   canonical and which is recorded in `supersedes`, and allow the author to
+   override (keep them as separate cards, or reverse the canonical choice).
+   This is where the author steers segmentation — merge, split, relabel,
+   lock/unlock, and **adjust depth**: change the global `density`, or go
+   deeper/shallower on specific sections by adding a `density_overrides` entry
+   (non-uniform depth). (`-resegment <source>` forces step 1 fresh for that
+   source, discarding its old entries.) With `-plan`, this is the explicit stop
+   for review before any card body is written.
 4. **Write `segmentation.yml`** with the reviewed result — the effective
    `density`, any `density_overrides`, and the card entries (slug, id, file,
    source, scope, `locked`, `source_hash`). **If `-plan` was given, stop
@@ -179,6 +200,10 @@ to review when content drift invalidates it; it is not immutable.
 
 For each card entry that is new, refresh, or re-segmented:
 
+- **Skip superseded sources.** If the entry has a `supersedes` list, distill only
+  the **canonical** source (the entry's own `source`). Do not distill the
+  superseded files separately — they are absorbed. (Token savings: no duplicate
+  distillation of near-identical content.)
 - **Distill** its scoped source (a whole file/dir, or a single section) using the
   resolved profile — produce the one-line essence, ruthlessly compressed Core
   Concepts (tabs for nesting), and a Key Quotes section when quotes are enabled.
@@ -193,8 +218,10 @@ For each card entry that is new, refresh, or re-segmented:
   cards), `slug` (readable kebab-case, unique; preserved for existing), `title`,
   `source` (relative to the card's `.kb/`), `domain`, `tags`, `defines` (if any),
   `builds_on` (only if known — do not invent), `created` (today; kept on update),
-  `updated` (today), `meta`. For a section card, record the section in `meta`
-  (e.g. `meta.section`). Topic cards omit `kind`.
+  `updated` (today), `meta`. If the entry has a `supersedes` list, add
+  `refines: [relative-path-to-superseded-source]` (the oldest/most-superseded
+  source first). For a section card, record the section in `meta` (e.g.
+  `meta.section`). Topic cards omit `kind`.
 - **Linkify** known terms best-effort: convert the first occurrence of any term
   in the gathered term index to `[[defining-card-slug|surface text]]`.
 - **Write** the card to `.kb/<file>.kb.md` (the `file` from `segmentation.yml`).
@@ -275,6 +302,8 @@ cards:
     id: 7f3a...
     file: foo.architecture.kb.md
     source: ../reports/foo.pdf
+    supersedes:                  # optional: near-duplicate/refined sources absorbed
+      - ../reports/foo_v1.pdf    #   into this card; not separately distilled
     scope:                       # omit for whole-file / whole-directory cards
       section: "Architecture"
       signature: "<short topic fingerprint>"
@@ -287,3 +316,18 @@ cards:
 
 `# <title>`, then the `>` essence (one sentence), then `## Core Concepts` (nested
 bullets), then `## Key Quotes` (only when quotes are enabled).
+
+## Refinement / supersession fields
+
+When a card absorbs one or more near-duplicate or earlier-version sources:
+
+- **`refines`** (frontmatter list, relative paths) — present on the canonical card;
+  lists the superseded source file(s) this card refines or supersedes. The oldest/
+  most-superseded source comes first.
+- **`refined_by`** (frontmatter string, slug) — present on an older card *only if*
+  that card is kept as a separate entry (author override); names the slug of the
+  canonical card that supersedes it.
+
+Default behavior is no separate card for the superseded source — it is absorbed and
+only `refines:` appears on the canonical card. The `refined_by:` field is written
+only when the author explicitly keeps both cards.
