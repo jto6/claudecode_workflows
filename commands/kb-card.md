@@ -138,23 +138,42 @@ For each directory in scope, decide how its sources divide into cards:
 1. **Propose (adaptive).** Analyze the directory's sources and propose the set of
    cards, honoring any declared `card_unit`/`card_split`, otherwise choosing
    adaptively:
-	- **Near-duplicate / refinement scan (before per-file assignment).** Compare
-	  all files in the directory pairwise for similarity signals:
+	- **Near-duplicate / refinement / format-export scan (before per-file
+	  assignment).** Compare all files in the directory pairwise for
+	  similarity signals:
 		- filename versioning patterns (e.g. `_v1`/`_v2`, `_old`/`_new`,
 		  `_draft`/`_final`, date suffixes, numeric suffixes);
 		- file sizes within a factor of ~2 of each other;
 		- overlapping opening headings or first paragraphs (read the first
-		  ~20 lines of each file to compare structure and opening content).
+		  ~20 lines of each file to compare structure and opening content);
+		- **same filename stem with a known source→export extension pair**
+		  (see format-export classification below).
 	  Classify pairs as:
 		- **duplicate** — content is essentially identical (same headings,
 		  same core sentences); mtime may differ only slightly;
 		- **refinement** — one is a clear superset/evolution of the other
 		  (later mtime, same topic, some content added or changed, but
-		  clearly the same document).
-	  For a detected pair, propose **one card** for the **canonical** file
-	  (latest mtime, or higher version/final suffix), and record the superseded
-	  file(s) in that card entry's `supersedes` list. Flag the pair at the
-	  review gate (Step 2.3) so the author can confirm or override.
+		  clearly the same document);
+		- **format export** — one file is a derivative of the other in a
+		  different format, inferred from a matching stem and a recognized
+		  source→export extension pair. The canonical file is always the
+		  **source format** (the authored original), regardless of mtime.
+		  Recognized pairs (source → export): `.pptx`/`.ppt` → `.pdf`;
+		  `.docx`/`.doc` → `.pdf`; `.docx` → `.xml`; `.xlsx`/`.xls` →
+		  `.pdf`; `.odp`/`.odt` → `.pdf`. File-size similarity is **not**
+		  required for format-export detection (exports can differ
+		  substantially in size from their source).
+	  For a **duplicate or refinement** pair, propose **one card** for the
+	  **canonical** file (latest mtime, or higher version/final suffix),
+	  and record the superseded file(s) in that card entry's `supersedes`
+	  list.
+	  For a **format-export** pair, propose **one card** for the
+	  **source-format** file and record the export file(s) in that card
+	  entry's `exported_as` list. The export is **never distilled
+	  separately** — it adds no content beyond what the source format
+	  provides.
+	  Flag all detected pairs at the review gate (Step 2.3) so the author
+	  can confirm or override.
 	- detect the natural atom — a folder of variants of one thing → one card; a
 	  folder of distinct documents → one card each;
 	- split an over-dense / multi-topic unit into per-section cards when
@@ -304,6 +323,8 @@ cards:
     source: ../reports/foo.pdf
     supersedes:                  # optional: near-duplicate/refined sources absorbed
       - ../reports/foo_v1.pdf    #   into this card; not separately distilled
+    exported_as:                 # optional: format exports derived from this source
+      - ../reports/foo.pdf       #   not separately distilled (no extra content)
     scope:                       # omit for whole-file / whole-directory cards
       section: "Architecture"
       signature: "<short topic fingerprint>"
@@ -327,7 +348,13 @@ When a card absorbs one or more near-duplicate or earlier-version sources:
 - **`refined_by`** (frontmatter string, slug) — present on an older card *only if*
   that card is kept as a separate entry (author override); names the slug of the
   canonical card that supersedes it.
+- **`exported_as`** (frontmatter list, relative paths) — present on the source-format
+  card; lists format-export derivatives (e.g. a `.pdf` exported from a `.pptx`). These
+  files are never distilled separately — they carry no content beyond the source.
 
 Default behavior is no separate card for the superseded source — it is absorbed and
 only `refines:` appears on the canonical card. The `refined_by:` field is written
 only when the author explicitly keeps both cards.
+
+For format exports, no card is ever authored for the export file — only `exported_as:`
+appears on the source-format card. There is no reverse pointer on the export file.
