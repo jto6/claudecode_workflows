@@ -64,6 +64,39 @@ print(text)
 
 If the library is missing, install it first: `pip install youtube-transcript-api --break-system-packages`
 
+### Step 1b: Detect pre-distilled sources
+
+After ingesting, check whether the source is already a compressed, author-organized
+structure — a Freeplane mindmap (`.mm`), a mindmap-derived markdown file (root structure
+is primarily hierarchical bullets with little or no prose paragraphs), a formal outline,
+or similar. A pre-distilled source has:
+
+- No prose padding, transitions, or introductory paragraphs — nodes/bullets are the content
+- Hierarchy that reflects the author's intentional conceptual organization
+- Already-atomic items (each node is one idea, not a dense paragraph to mine)
+
+If the source is pre-distilled, **switch to structural-translation mode** for Steps 2–3:
+
+- **Do not drop content.** Every branch contributes something. The level-2 cap of
+  3–7 top-level concepts means "don't pad" — it must never cause you to silently omit
+  branches. If 15 branches don't reduce to fewer meaningful groups, output 15 bullets.
+- **Synthesis and regrouping are still the job.** If content across branches reveals a
+  natural higher-order grouping (e.g. 15 company branches that are really 2 categories
+  of vendor), synthesize into that structure — the grouped result is more useful than
+  a flat enumeration. The authored hierarchy is a starting point, not a constraint.
+- **Default to level-3 depth and completeness** regardless of the flag, since the
+  source is already lean and there is no prose to compress.
+- **The `>` essence is the primary synthesis task.** The author never wrote a thesis
+  sentence — synthesize one that captures what the entire structure is about as a unit.
+  This is the only genuinely novel work.
+- **Preserve richcontent annotations.** In a converted mindmap, body text under a heading
+  is the author's deliberate note for that node — keep it.
+- **Preserve icon-derived status prefixes.** ✓ and ✗ carry semantic meaning (done vs.
+  rejected); do not strip them.
+
+If the source is NOT pre-distilled (prose document, transcript, article, etc.), proceed
+normally with Step 2 below.
+
 ### Step 2: Identify core concepts
 
 Analyze the content and extract:
