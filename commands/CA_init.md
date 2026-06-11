@@ -1,112 +1,91 @@
-# Comprehensive Codebase Analysis - /CA_init
+# Three-Level Codebase Analysis — /CA_init
 
-Initialize a thorough analysis of this codebase by creating a structured code_analysis.md file.
+Generate (or refresh) a three-level "onion" analysis of the current repository. The levels serve different reading modes across many
+repositories: level 1 to grok a repo quickly, level 2 to navigate and reason about it, level 3 to answer specific technical questions
+without re-exploring.
 
-## Analysis Framework
+## Output files
 
-Please create a `code_analysis.md` file with the following comprehensive analysis:
+Write to `analysis/` at the repository root. If upstream already owns a directory named `analysis/`, use `ca/` instead and say so.
 
-### 1. High-Level Architecture Survey
-- Top-level directory structure and purpose of each directory
-- Main entry points (Makefile, package.json, main files, etc.)
-- Configuration files and their roles
-- Build system architecture and key dependencies
+- `analysis/level-1-overview.md`
+- `analysis/level-2-architecture.md`
+- `analysis/level-3-reference.md`
 
-### 2. Component Mapping
-- Major functional modules/packages/libraries
-- Component dependencies and relationships
-- Shared utilities and common code patterns
-- Test directories and documentation structure
+Every file starts with this frontmatter:
 
-### 3. Technology Stack Identification
-- Programming languages and versions
-- Frameworks and libraries (with versions)
-- Build tools and dependency managers
-- Database technologies and ORMs
-- Testing frameworks and deployment tools
+```yaml
+---
+repo: <org/name, or local path if no remote>
+analyzed-commit: <output of git rev-parse --short HEAD>
+analyzed-date: <YYYY-MM-DD>
+generator: /CA_init v2
+---
+```
 
-### 4. Design Pattern Analysis
-- Architectural patterns (MVC, microservices, monolith, etc.)
-- Code design patterns (factory, observer, strategy, etc.)
-- Code organization and naming conventions
-- Configuration management patterns
-- Error handling and logging strategies
+## Process (order matters)
 
-### 5. Entry Points and Data Flow
-- Application entry points and main execution paths
-- Data flow between major components
-- External integrations and API endpoints
-- Configuration loading and environment setup
-- Key business logic workflows
+1. **Classify the repo first.** Determine what kind of repository this is: application, library/framework, spec/documentation umbrella,
+   examples/blueprints, infrastructure. Shape the whole analysis accordingly. If it is a spec/docs or umbrella repo, state that prominently
+   in level 1 and identify where the actual code lives (sibling repos, upstream projects).
+2. **Explore deeply, once.** Use Glob/Grep/Read systematically: READMEs, build files, entry points, config files, models/schemas, a sample
+   of core source files. Distinguish hand-written from generated code. Focus on understanding, not cataloging.
+3. **Write by distillation, top of the onion last.** Write level 3 first (raw reference from your exploration), distill level 2 from it,
+   then distill level 1 from level 2. Test: level 1 must be writable from level 2 alone — if it isn't, level 2 is missing something.
 
-### 6. Build and Development Workflow
-- Build system and compilation process
-- Testing strategy and execution commands
-- Deployment procedures and requirements
-- Environment setup and prerequisites
-- Common development commands and scripts
+## Level definitions
 
-### 7. Key Features Analysis
-- Identify the core features and functionalities of the system
-- Understand how each major feature is implemented
-- Document algorithms, design strategies, and implementation approaches used
-- Map features to their corresponding code modules and entry points
-- Analyze feature interactions and dependencies
-- Note any domain-specific logic or business rules
-- Identify optimization techniques and performance considerations per feature
+### Level 1 — Overview (hard cap: ~1 page / ~60 lines)
 
-### 8. Code Quality Assessment
-- Documentation coverage and quality
-- Testing coverage and approaches
-- Code complexity and technical debt indicators
-- Security considerations and practices
-- Performance considerations and bottlenecks
+The *why* and *what* at a conceptual and vision level:
 
-### 9. Recommended Prompts for Deeper Investigation
-Create a section with specific prompts for further codebase exploration:
+- The problem the project exists to solve, and its goals
+- What this repository itself contains vs. what lives in related/sibling repositories
+- The surrounding ecosystem (related projects, upstream/downstream dependencies) — a small table is appropriate
+- The core workflow or data flow in one sentence
+- Status and posture (maturity, activity, production-readiness)
 
-#### Architecture Deep Dives
-- "Analyze the [specific component] architecture and explain its design decisions"
-- "Trace the complete data flow for [specific feature/workflow]"
-- "How does [Component A] communicate with [Component B]?"
-- "What design patterns are implemented in [specific module]?"
+No implementation detail. No file paths except where genuinely illustrative.
 
-#### Feature Analysis
-- "How is [specific feature] implemented end-to-end?"
-- "What algorithms are used for [specific functionality]?"
-- "Analyze the performance characteristics of [feature/component]"
-- "What are the edge cases and error handling for [feature]?"
+### Level 2 — Architecture (target: 3–4 pages)
 
-#### Code Quality and Maintenance
-- "Identify potential refactoring opportunities in [module/component]"
-- "Analyze the test coverage for [specific feature]"
-- "What are the main technical debt areas in this codebase?"
-- "Review the security implications of [specific component]"
+The *how*, deep enough to cover design decisions:
 
-#### Integration and Dependencies  
-- "How does this system integrate with [external system/API]?"
-- "Analyze the dependency chain for [specific functionality]"
-- "What would be the impact of changing [specific component]?"
-- "How is configuration managed across different environments?"
+- The end-to-end pipeline / data flow / request flow, stage by stage
+- Key design decisions **with their rationale and trade-offs** (each as its own short subsection)
+- Architectural and code design patterns actually used (not a generic catalog)
+- Component map and how the repository is organized
+- Build and development workflow at summary level
+- Close with a short "mental model to carry forward" paragraph
 
-#### Development Workflow
-- "What is the complete development workflow from code to deployment?"
-- "How are database migrations handled?"
-- "What monitoring and logging strategies are implemented?"
-- "How is error handling and recovery implemented system-wide?"
+File and directory paths are appropriate here; API signatures are not.
 
-## Instructions
+### Level 3 — Technical reference (no length cap, but index-style)
 
-**IMPORTANT: Always check ~/.claude/commands directory for custom slash commands before attempting to execute them as bash commands. Slash commands (starting with /) are Claude Code custom commands, not bash commands.**
+A lookup reference, **not** prose re-narration of the code:
 
-When encountering any command starting with `/`, first read the corresponding `.md` file in `~/.claude/commands/` to understand the proper usage and implementation before executing.
+- Repository file map with one-line purposes
+- Observed API surfaces (function/class signatures, generated code patterns), quoted minimally with `file:line` pointers
+- Data formats, schemas, and config file structures with short examples
+- CLI commands, build chain, toolchain versions
+- Known quirks, gotchas, and inconsistencies found during exploration
+- End with a `## Recommended prompts` section: 8–15 **filled-in, repo-specific** prompts for deeper investigation (real component and
+  feature names — never placeholder templates like "[specific component]")
 
-1. Use available search tools (Glob, Grep, Read) to explore the codebase systematically
-2. Start with high-level structure, then drill down into specific components
-3. Focus on understanding rather than just cataloging files
-4. Identify patterns and conventions used throughout the codebase
-5. For key features, understand not just what they do but how they work
-6. Include the recommended prompts section to guide future investigations
-7. Create actionable insights for developers working with this code
+## What NOT to include
 
-Create a well-structured `code_analysis.md` file that serves as a comprehensive guide for understanding this codebase and provides a roadmap for deeper exploration. **Include the slash command reminder at the top of the generated code_analysis.md file.**
+- No code-quality / technical-debt / security audit — that is a separate, on-demand task, not onboarding
+- No generic boilerplate that would be identical across repos
+- No duplicated content between levels; each level may link to the level below it instead
+
+## Update mode
+
+If invoked as `/CA_init update`: read `analyzed-commit` from the frontmatter, run `git diff --stat <analyzed-commit>..HEAD`, refresh only
+the sections affected by the changes, and update the frontmatter commit and date.
+
+## Conventions
+
+- These files are committed on the personal annotation branch (`claude`), never on main or PR branches. Commit them in their own commit
+  with a message prefixed `analysis:` (see the claude-branch workflow cheat sheet in `~/dev/sdv/notes/claude-branch-workflow.md`).
+- Follow the global markdown formatting rules (blank line between paragraph and list, aligned pipe tables, grid tables when wider than
+  150 characters).
