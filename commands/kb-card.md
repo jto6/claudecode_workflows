@@ -108,6 +108,35 @@ steps over that local file:
 
 Then continue from Step 1 with the captured local file as the source.
 
+### Step 0b: Pre-process Freeplane mindmap sources (`.mm`)
+
+If a source file has a `.mm` extension, convert it to markdown before analysis:
+
+- Run `python3 ~/dev/utility-scripts/freeplane/mm2md.py <source.mm> /tmp/<stem>.md`
+- Use the generated `/tmp/<stem>.md` as the **effective source** for all subsequent steps
+  (segmentation, distillation, `source_hash` computation).
+- The card's `source` frontmatter field **still records the original `.mm` path** (relative
+  to the card's `.kb/` directory), not the temp file.
+- The temp file is discarded after the run. On re-runs, re-convert fresh (so that any edits
+  to the `.mm` are picked up and the `source_hash` reflects the `.mm`, not a stale temp file).
+- `mm2md.py` extracts node hierarchy, richcontent (details/notes), numbered nodes, and
+  `button_ok`/`button_cancel` icons. It does not capture non-hierarchical arrow edges or
+  per-node graphical decorations — this is fine for knowledge distillation purposes.
+
+**Mindmap-specific distillation behavior (applies in Step 3):**
+
+- A mindmap is already author-distilled. Treat it as a pre-distilled source (per
+  `/distill` Step 1b) — structural translation, not re-compression.
+- **Default density overrides to `fine`** for `.mm` sources unless the user passed an
+  explicit `-density` flag.
+- **Do not drop content** to hit a concept count — every branch contributes something.
+  Synthesis and regrouping across branches is encouraged when it reveals higher-order
+  structure (e.g. 15 company branches that are really 2 vendor categories).
+- The `>` essence is the primary synthesis task: write one sentence capturing what the
+  whole map is about. The author never wrote one.
+
+Then continue from Step 1 with the converted temp file as the effective source.
+
 ### Step 1: Resolve scope and area config
 
 - Determine the operating scope: a single `source` (file/dir), or a recursive
