@@ -24,6 +24,7 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
 /kb-card [source | <url>] [-r] [-plan] [-resegment] [-update] [-visual]
          [-density coarse|normal|fine|exhaustive] [-cards <N>]
          [-file-summary | -no-file-summary]
+         [-dir-summary | -no-dir-summary]
          [-domain <d>] [-level 1|2|3] [-quotes | -no-quotes]
 ```
 
@@ -50,6 +51,11 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
   card per source whose section split yields ≥2 topic cards (see Step 3a). The
   N=1 short-circuit always applies: a source with only one topic card never
   gets a separate summary card.
+- `-dir-summary` / `-no-dir-summary` — per-run override of the area's
+  `kb.yml dir_summary` setting. When effective, author a `kind: dir_summary`
+  card for the directory when it contains ≥2 distinct sources (see Step 3b).
+  The N=1 short-circuit always applies: a directory with only one source never
+  gets a separate summary card.
 - `-domain` / `-level` / `-quotes` / `-no-quotes` — override domain and the
   distill profile (level / quotes).
 
@@ -72,10 +78,13 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
 - **Boundaries vs. content.** Boundaries are sticky (in `segmentation.yml`);
   content is regenerated. Updating a source refreshes content but keeps the
   boundary.
-- **Card roles (`kind`).** A card with `kind: file_summary` distills the source
+- **Card roles (`kind`).** A card with `kind: file_summary` distills a source
   *as a whole* (one card per source, opt-in via `kb.yml file_summary` or the
-  `-file-summary` flag, only when the source produces ≥2 topic cards). All
-  other cards are topic cards (no `kind` field). See Step 3a.
+  `-file-summary` flag, only when the source produces ≥2 topic cards). A card
+  with `kind: dir_summary` distills a directory as a whole (one card per
+  directory, opt-in via `kb.yml dir_summary` or the `-dir-summary` flag, only
+  when the directory has ≥2 distinct sources). All other cards are topic cards
+  (no `kind` field). See Steps 3a and 3b.
 
 ## Instructions
 
@@ -114,6 +123,8 @@ Then continue from Step 1 with the captured local file as the source.
   in `segmentation.yml` take precedence within their `(source, section)` scope.
 - Resolve **file_summary**: `-file-summary`/`-no-file-summary` flag → `kb.yml
   file_summary` (`auto|on|off`) → `auto`. `auto` currently resolves to `on`.
+- Resolve **dir_summary**: `-dir-summary`/`-no-dir-summary` flag → `kb.yml
+  dir_summary` (`auto|on|off`) → `auto`. `auto` currently resolves to `on`.
 - **First-run bootstrap.** `.kb/` directories are created automatically as needed
   — never require the user to pre-create them. If **no `.kb/kb.yml`** is found
   anywhere up the tree, create one at the **root of the current scope** (the
@@ -278,6 +289,41 @@ section split yields ≥2 topic cards (after Step 3), author or refresh a
   removes them. (Removing a file-summary card is treated like any retirement
   in Step 4.)
 
+### Step 3b: Author / refresh directory-summary card (when enabled)
+
+When the effective `dir_summary` is `on` (default), after all per-source cards
+for the directory have been processed in Steps 3 and 3a, author or refresh a
+**directory-summary card** distilling the directory as a whole:
+
+- **N=1 short-circuit.** When a directory contains only one distinct source
+  (after deduplication and format-export collapsing), no dir_summary card is
+  written — the lone source's file_summary (or topic card) already serves as
+  the directory annotation in the FS view.
+- **At most one** dir_summary card per directory. If one already exists in
+  `segmentation.yml` for this directory, refresh or skip it.
+- **Staleness check.** Compute `dir_hash = sha256(sorted source_hash values
+  for all sources in this directory)`. If an existing dir_summary card entry
+  records a matching `dir_hash`, skip regeneration — the directory's
+  collective content is unchanged.
+- **Distill** the directory as a whole: read the `>` essences from all cards
+  authored for this directory and synthesize a one-sentence `>` essence
+  capturing the collective theme. The `## Core Concepts` section describes
+  what the directory covers as a unit — its overall subject and scope — not a
+  per-file table of contents.
+- **Filename:** `<dirname>.kb.md` (the directory's basename). For example,
+  `reports/.kb/reports.kb.md`. If a topic card already occupies that slot,
+  rename it to its `<source-stem>.<section-slug>` form first.
+- **Frontmatter:** same fields as a topic card, plus `kind: dir_summary`.
+  `source: ..` (the directory, relative to `.kb/`). No `scope`. Tags reflect
+  the directory's collective themes; reconcile against the same vocabulary as
+  the topic cards.
+- **`segmentation.yml` entry:** record the dir_summary card in the manifest.
+  Include a `dir_hash` field (the hash computed above) so re-runs can detect
+  staleness without reading card bodies.
+- When `dir_summary` resolves to `off` (or `-no-dir-summary` is given), do
+  not create new dir_summary cards; existing ones remain unless the author
+  removes them.
+
 ### Step 4: Retire orphans and report
 
 - For orphaned cards, confirm, then delete the `.kb.md` and remove the entry from
@@ -297,6 +343,9 @@ section split yields ≥2 topic cards (after Step 3), author or refresh a
   (Step 3a) when one exists. Whenever a file-summary is present for a source,
   *every* topic card from that source must take the
   `<stem>.<section-slug>.kb.md` form — the bare stem is never shared.
+- The **directory-summary card** (Step 3b) uses `<dirname>.kb.md` (the
+  directory's basename, e.g. `reports/.kb/reports.kb.md`). If a source file
+  happens to share that stem, it must take the `<stem>.<section-slug>` form.
 
 ## `segmentation.yml` format
 
@@ -305,6 +354,7 @@ section split yields ≥2 topic cards (after Step 3), author or refresh a
 version: 1
 updated: 2026-06-07
 density: normal                  # effective depth (from kb.yml/-run)
+dir_fingerprint: sha256:...      # hash of {name,size,mtime} for all sources; kbi --update staleness signal
 density_overrides:               # optional: non-uniform depth, by (source, section)
   - source: ../reports/foo.pdf
     section: "Architecture"
@@ -331,6 +381,13 @@ cards:
     title: SDV Architecture Overview
     locked: true
     source_hash: sha256:...
+  - slug: reports-dir            # dir_summary card for this directory
+    id: 9e4f...
+    file: reports.kb.md          # <dirname>.kb.md — reserved for the dir summary
+    kind: dir_summary
+    source: ..
+    title: Reports
+    dir_hash: sha256:...         # hash of sorted source_hashes; drives dir_summary refresh
 ```
 
 ## Card body shape
