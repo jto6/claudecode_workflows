@@ -86,6 +86,7 @@ the sections affected by the changes, and update the frontmatter commit and date
 ## Conventions
 
 - These files are committed on the personal annotation branch (`claude`), never on main or PR branches. Commit them in their own commit
-  with a message prefixed `analysis:` (see the claude-branch workflow cheat sheet in `~/dev/sdv/notes/claude-branch-workflow.md`).
+  with a message prefixed `analysis:` (see the claude-branch workflow cheat sheet in
+  `~/dev/claudecode_workflows/docs/claude-branch-workflow.md`).
 - Follow the global markdown formatting rules (blank line between paragraph and list, aligned pipe tables, grid tables when wider than
   150 characters).
