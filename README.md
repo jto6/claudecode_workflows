@@ -173,7 +173,20 @@ The installer creates `~/.claude/CLAUDE.md` with global instructions that teach 
 
 This ensures slash commands work correctly across all repositories without needing to add instructions to each project's CLAUDE.md file.
 
-Hooks configuration is in `hooks/settings_template.json` and gets merged with your existing Claude Code settings.
+Hooks and base permissions live in `hooks/settings_template.json` (the authoritative source). At install time you pick an environment, and `install.zsh` builds your `~/.claude/settings.json` as `template * <env fragment>`:
+
+- `hooks/settings.env.ti.json` — TI Linux (work)
+- `hooks/settings.env.mac.json` — TI Mac (work)
+- `hooks/settings.env.home.json` — Home (claude-hud status line + plugin)
+
+The installer is non-destructive about an existing `settings.json`:
+
+- It writes a **timestamped backup** (`settings.json.backup.YYYYMMDD-HHMMSS`) before overwriting, so no prior backup is ever clobbered.
+- It **detects what the new file would drop** and splits it into two buckets:
+    - **New top-level keys** — offered for merge back into `settings.json` (template still wins on conflicts).
+    - **Differences inside keys the template also defines** (e.g. an extra `permissions.allow` entry) — only warned about, since the merge keeps the template's values and replaces arrays wholesale. You're told to compare against the backup and merge those by hand if you care.
+- When you merge, it then asks, **for each restored top-level key, where to persist it** — the base `settings_template.json`, the selected `settings.env.*.json` fragment, or skip. Chosen keys are written straight into those repo files (so the template stays authoritative); you just review the diff and commit.
+- Any keys you skip live only in your local `settings.json`, and the next install will warn about them again until you persist them.
 
 ## Repository Structure
 
@@ -201,7 +214,10 @@ claude_code_workflows/
 ├── css/                          # Styling templates
 │   └── pdf-style.css             # Default PDF styling
 └── hooks/                        # Claude Code configuration
-    └── settings_template.json    # Hooks and permissions
+    ├── settings_template.json    # Hooks and permissions (authoritative)
+    ├── settings.env.ti.json      # TI Linux environment overlay
+    ├── settings.env.mac.json     # TI Mac environment overlay
+    └── settings.env.home.json    # Home environment overlay (claude-hud)
 ```
 
 ## Requirements

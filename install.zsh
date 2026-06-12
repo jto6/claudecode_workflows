@@ -90,39 +90,154 @@ for hook_file in "$REPO_PATH/hooks"/*.sh; do
     fi
 done
 
-# Merge hooks configuration if settings.json exists
-if [[ -f "$REPO_PATH/hooks/settings_template.json" ]]; then
-    if [[ -f "$CLAUDE_SETTINGS" ]]; then
-        cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.backup"
-        echo "✅ Backed up existing settings.json → settings.json.backup"
-    fi
-    cp "$REPO_PATH/hooks/settings_template.json" "$CLAUDE_SETTINGS"
-    echo "✅ Created settings.json from template"
-fi
+# ── settings.json: pick environment, then merge into the template safely ──────
+# The template (hooks/settings_template.json) is authoritative. We build the new
+# settings.json as `template * <env fragment>` (env wins), but before overwriting
+# an existing settings.json we (1) take a timestamped backup, (2) detect any keys
+# present in the working copy that the new file would drop, and (3) offer to merge
+# them back, reminding that they must be committed to the template to persist.
+TEMPLATE="$REPO_PATH/hooks/settings_template.json"
 
-# Apply environment-specific settings into settings.json
 echo ""
 echo "⚙️  Select environment:"
 echo "  1) TI Linux (work)  — NVM node paths, TI gateway, CA cert, statusline"
 echo "  2) TI Mac (work)    — /usr/local node paths, TI gateway, no CA cert"
-echo "  3) Home"
+echo "  3) Home             — claude-hud statusline + plugin"
 echo "  4) Skip"
 read "env_choice?Enter choice [1/2/3/4]: "
+
+ENV_FRAGMENT=""
 case "$env_choice" in
-    1) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.ti.json" > "$CLAUDE_SETTINGS.tmp"
-       mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
-       echo "✅ Applied TI Linux environment settings"
+    1) ENV_FRAGMENT="$REPO_PATH/hooks/settings.env.ti.json"
        ln -sf "$REPO_PATH/templates/CLAUDE.ti.md" "$HOME/.claude/CLAUDE.md"
        echo "✅ Linked TI global Claude Code instructions (CLAUDE.ti.md)" ;;
-    2) jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$REPO_PATH/hooks/settings.env.mac.json" > "$CLAUDE_SETTINGS.tmp"
-       mv "$CLAUDE_SETTINGS.tmp" "$CLAUDE_SETTINGS"
-       echo "✅ Applied TI Mac environment settings"
+    2) ENV_FRAGMENT="$REPO_PATH/hooks/settings.env.mac.json"
        ln -sf "$REPO_PATH/templates/CLAUDE.ti.md" "$HOME/.claude/CLAUDE.md"
        echo "✅ Linked TI global Claude Code instructions (CLAUDE.ti.md)" ;;
-    3) ln -sf "$REPO_PATH/templates/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+    3) ENV_FRAGMENT="$REPO_PATH/hooks/settings.env.home.json"
+       ln -sf "$REPO_PATH/templates/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
        echo "✅ Linked home global Claude Code instructions (CLAUDE.md)" ;;
     *) echo "⏭️  Skipped environment selection (CLAUDE.md symlink not updated)" ;;
 esac
+
+if [[ -f "$TEMPLATE" ]]; then
+    # Build the prospective new settings.json (template, with the env fragment merged on top).
+    PROSPECTIVE="$(mktemp)"
+    if [[ -n "$ENV_FRAGMENT" && -f "$ENV_FRAGMENT" ]]; then
+        jq -s '.[0] * .[1]' "$TEMPLATE" "$ENV_FRAGMENT" > "$PROSPECTIVE"
+    else
+        cp "$TEMPLATE" "$PROSPECTIVE"
+    fi
+
+    MERGE_DRIFT=0
+    if [[ -f "$CLAUDE_SETTINGS" ]]; then
+        # 1) Timestamped backup — never clobber a previous backup.
+        backup="$CLAUDE_SETTINGS.backup.$(date +%Y%m%d-%H%M%S)"
+        cp "$CLAUDE_SETTINGS" "$backup"
+        echo "✅ Backed up existing settings.json → ${backup:t}"
+
+        # 2) Detect what the new (template-derived) file would drop, split into:
+        #      • lost_top : whole top-level keys absent from the new file — cleanly
+        #                   mergeable and persistable back into the repo.
+        #      • partial  : differences *inside* a key the template also defines. The
+        #                   merge keeps the template's scalars and replaces arrays
+        #                   wholesale, so these may not survive — flagged for manual review.
+        lost_leaf=$(comm -23 \
+            <(jq -r 'paths(scalars) | map(tostring) | join(".")' "$CLAUDE_SETTINGS" 2>/dev/null | sort -u) \
+            <(jq -r 'paths(scalars) | map(tostring) | join(".")' "$PROSPECTIVE"   2>/dev/null | sort -u))
+        lost_top=$(comm -23 \
+            <(jq -r 'keys[]' "$CLAUDE_SETTINGS" 2>/dev/null | sort -u) \
+            <(jq -r 'keys[]' "$PROSPECTIVE"   2>/dev/null | sort -u))
+
+        # A lost leaf whose top-level key still exists in the new file is partial drift.
+        partial=""
+        for p in ${(f)lost_leaf}; do
+            [[ -z "$p" ]] && continue
+            print -rl -- ${(f)lost_top} | grep -qxF -- "${p%%.*}" || partial+="${p}"$'\n'
+        done
+        partial=$(print -r -- "$partial" | sed -E 's/\.[0-9]+/[]/g' | sed '/^$/d' | sort -u)
+
+        if [[ -n "$lost_top" || -n "$partial" ]]; then
+            echo ""
+            echo "⚠️  Your current settings.json has content NOT in the new template-derived file:"
+            if [[ -n "$lost_top" ]]; then
+                echo "    New top-level keys (can be merged back and saved into the repo):"
+                print -rl -- ${(f)lost_top} | sed 's/^/      • /'
+            fi
+            if [[ -n "$partial" ]]; then
+                echo "    Differences inside keys the template also defines — the merge keeps the"
+                echo "    template's values (arrays are replaced, not unioned), so these may NOT survive:"
+                echo "$partial" | sed 's/^/      • /'
+                echo "      → compare with ${backup:t} and merge these by hand if you care about them."
+            fi
+            read "merge_choice?    Merge your settings back into the new settings.json? [y/N]: "
+            if [[ "$merge_choice" == [yY]* ]]; then
+                # working * prospective: keep working-only keys, template still wins on conflicts.
+                # (Note: list-valued settings are replaced by the template's list, not unioned.)
+                jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$PROSPECTIVE" > "$PROSPECTIVE.merged" \
+                    && mv "$PROSPECTIVE.merged" "$PROSPECTIVE"
+                MERGE_DRIFT=1
+                echo "    ✅ Merged your settings into the new settings.json"
+
+                # Offer to backport each restored top-level key into the repo so the
+                # template (or env fragment) becomes the source of truth for it.
+                if [[ -n "$lost_top" ]]; then
+                    echo ""
+                    echo "    Persist these restored keys into the repo (so the template stays authoritative)?"
+                    [[ -n "$ENV_FRAGMENT" ]] && env_label="env fragment (${ENV_FRAGMENT:t})" || env_label="env fragment (n/a — no env selected)"
+                    for key in ${(f)lost_top}; do
+                        val=$(jq -c --arg k "$key" '.[$k]' "$PROSPECTIVE")
+                        if [[ -n "$ENV_FRAGMENT" ]]; then
+                            read "dest?      • '$key' → [b]ase template / [e]nv ($env_label) / [s]kip? [b/e/s]: "
+                        else
+                            read "dest?      • '$key' → [b]ase template / [s]kip? [b/s]: "
+                        fi
+                        case "$dest" in
+                            b|B) tmpf=$(mktemp)
+                                 jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$TEMPLATE" > "$tmpf" \
+                                     && mv "$tmpf" "$TEMPLATE"
+                                 BACKPORTED="${BACKPORTED}${BACKPORTED:+, }$key→${TEMPLATE:t}" ;;
+                            e|E) if [[ -n "$ENV_FRAGMENT" ]]; then
+                                     tmpf=$(mktemp)
+                                     jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$ENV_FRAGMENT" > "$tmpf" \
+                                         && mv "$tmpf" "$ENV_FRAGMENT"
+                                     BACKPORTED="${BACKPORTED}${BACKPORTED:+, }$key→${ENV_FRAGMENT:t}"
+                                 else
+                                     echo "        ⏭️  no env fragment selected — skipped"
+                                     SKIPPED="${SKIPPED}${SKIPPED:+, }$key"
+                                 fi ;;
+                            *)   SKIPPED="${SKIPPED}${SKIPPED:+, }$key" ;;
+                        esac
+                    done
+                fi
+            else
+                echo "    ⏭️  Dropped (still recoverable from ${backup:t})"
+            fi
+        fi
+    fi
+
+    # 3) Write the result.
+    cp "$PROSPECTIVE" "$CLAUDE_SETTINGS"
+    rm -f "$PROSPECTIVE"
+    if [[ -n "$ENV_FRAGMENT" ]]; then
+        echo "✅ Wrote settings.json (template + ${ENV_FRAGMENT:t})"
+    else
+        echo "✅ Wrote settings.json (template only)"
+    fi
+
+    if [[ "$MERGE_DRIFT" == 1 ]]; then
+        echo ""
+        if [[ -n "$BACKPORTED" ]]; then
+            echo "🔔 Backported into the repo: $BACKPORTED"
+            echo "   → review the diff and COMMIT these files so the change persists."
+        fi
+        if [[ -n "$SKIPPED" ]]; then
+            echo "🔔 Not persisted (live settings.json only): $SKIPPED"
+            echo "   → the next install will warn about these again until you add them to the"
+            echo "     template or a settings.env.*.json fragment and commit."
+        fi
+    fi
+fi
 
 # Create settings.local.json for new machines
 if [[ ! -f "$CLAUDE_SETTINGS_LOCAL" ]]; then
