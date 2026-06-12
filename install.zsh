@@ -122,9 +122,28 @@ esac
 
 if [[ -f "$TEMPLATE" ]]; then
     # Build the prospective new settings.json (template, with the env fragment merged on top).
+    # Objects are deep-merged (env wins on scalar conflicts); arrays are concatenated so env
+    # fragments can extend allow/deny lists without replacing the template's entries.
     PROSPECTIVE="$(mktemp)"
     if [[ -n "$ENV_FRAGMENT" && -f "$ENV_FRAGMENT" ]]; then
-        jq -s '.[0] * .[1]' "$TEMPLATE" "$ENV_FRAGMENT" > "$PROSPECTIVE"
+        jq -s '
+          def jmerge($a; $b):
+            if (($a|type) == "object") and (($b|type) == "object")
+            then reduce ($b | keys_unsorted[]) as $k (
+                $a;
+                .[$k] = (
+                  if ((.[$k]|type) == "array") and (($b[$k]|type) == "array")
+                  then .[$k] + $b[$k]
+                  elif ((.[$k]|type) == "object") and (($b[$k]|type) == "object")
+                  then jmerge(.[$k]; $b[$k])
+                  else $b[$k]
+                  end
+                )
+              )
+            else $b
+            end;
+          jmerge(.[0]; .[1])
+        ' "$TEMPLATE" "$ENV_FRAGMENT" > "$PROSPECTIVE"
     else
         cp "$TEMPLATE" "$PROSPECTIVE"
     fi
@@ -170,53 +189,88 @@ if [[ -f "$TEMPLATE" ]]; then
                 echo "$partial" | sed 's/^/      • /'
                 echo "      → compare with ${backup:t} and merge these by hand if you care about them."
             fi
-            read "merge_choice?    Merge your settings back into the new settings.json? [y/N]: "
-            if [[ "$merge_choice" == [yY]* ]]; then
-                # working * prospective: keep working-only keys, template still wins on conflicts.
-                # (Note: list-valued settings are replaced by the template's list, not unioned.)
-                jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$PROSPECTIVE" > "$PROSPECTIVE.merged" \
-                    && mv "$PROSPECTIVE.merged" "$PROSPECTIVE"
-                MERGE_DRIFT=1
-                echo "    ✅ Merged your settings into the new settings.json"
-
-                # Offer to backport each restored top-level key into the repo so the
-                # template (or env fragment) becomes the source of truth for it.
-                if [[ -n "$lost_top" ]]; then
+            echo "    [y] merge back  [n] drop (default)  [r] review prospective  [a] abort install"
+            read "merge_choice?    Choice [y/n/r/a]: "
+            case "$merge_choice" in
+                r|R)
                     echo ""
-                    echo "    Persist these restored keys into the repo (so the template stays authoritative)?"
-                    [[ -n "$ENV_FRAGMENT" ]] && env_label="env fragment (${ENV_FRAGMENT:t})" || env_label="env fragment (n/a — no env selected)"
-                    for key in ${(f)lost_top}; do
-                        val=$(jq -c --arg k "$key" '.[$k]' "$PROSPECTIVE")
-                        if [[ -n "$ENV_FRAGMENT" ]]; then
-                            read "dest?      • '$key' → [b]ase template / [e]nv ($env_label) / [s]kip? [b/e/s]: "
-                        else
-                            read "dest?      • '$key' → [b]ase template / [s]kip? [b/s]: "
-                        fi
-                        case "$dest" in
-                            b|B) tmpf=$(mktemp)
-                                 jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$TEMPLATE" > "$tmpf" \
-                                     && mv "$tmpf" "$TEMPLATE"
-                                 BACKPORTED="${BACKPORTED}${BACKPORTED:+, }$key→${TEMPLATE:t}" ;;
-                            e|E) if [[ -n "$ENV_FRAGMENT" ]]; then
-                                     tmpf=$(mktemp)
-                                     jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$ENV_FRAGMENT" > "$tmpf" \
-                                         && mv "$tmpf" "$ENV_FRAGMENT"
-                                     BACKPORTED="${BACKPORTED}${BACKPORTED:+, }$key→${ENV_FRAGMENT:t}"
-                                 else
-                                     echo "        ⏭️  no env fragment selected — skipped"
-                                     SKIPPED="${SKIPPED}${SKIPPED:+, }$key"
-                                 fi ;;
-                            *)   SKIPPED="${SKIPPED}${SKIPPED:+, }$key" ;;
-                        esac
-                    done
-                fi
-            else
-                echo "    ⏭️  Dropped (still recoverable from ${backup:t})"
-            fi
+                    echo "    📋  Prospective settings.json (template + env, no merge) saved to:"
+                    echo "          $PROSPECTIVE"
+                    echo "        diff $CLAUDE_SETTINGS $PROSPECTIVE"
+                    echo "⏭️  Aborted — nothing written. Backup preserved: ${backup:t}"
+                    exit 0 ;;
+                a|A)
+                    echo "⏭️  Aborted — nothing written."
+                    rm -f "$backup" "$PROSPECTIVE"
+                    exit 0 ;;
+                y|Y*)
+                    # working * prospective: keep working-only keys, template still wins on conflicts.
+                    # Array-valued settings (allow/deny lists) are replaced by the prospective's lists.
+                    jq -s '.[0] * .[1]' "$CLAUDE_SETTINGS" "$PROSPECTIVE" > "$PROSPECTIVE.merged" \
+                        && mv "$PROSPECTIVE.merged" "$PROSPECTIVE"
+                    MERGE_DRIFT=1
+                    echo "    ✅ Merged your settings into the new settings.json"
+
+                    # Offer to backport each restored top-level key into the repo so the
+                    # template (or env fragment) becomes the source of truth for it.
+                    if [[ -n "$lost_top" ]]; then
+                        echo ""
+                        echo "    Persist these restored keys into the repo (so the template stays authoritative)?"
+                        [[ -n "$ENV_FRAGMENT" ]] && env_label="env fragment (${ENV_FRAGMENT:t})" || env_label="env fragment (n/a — no env selected)"
+                        for key in ${(f)lost_top}; do
+                            val=$(jq -c --arg k "$key" '.[$k]' "$PROSPECTIVE")
+                            if [[ -n "$ENV_FRAGMENT" ]]; then
+                                read "dest?      • '$key' → [b]ase template / [e]nv ($env_label) / [s]kip? [b/e/s]: "
+                            else
+                                read "dest?      • '$key' → [b]ase template / [s]kip? [b/s]: "
+                            fi
+                            case "$dest" in
+                                b|B) tmpf=$(mktemp)
+                                     jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$TEMPLATE" > "$tmpf" \
+                                         && mv "$tmpf" "$TEMPLATE"
+                                     BACKPORTED="${BACKPORTED}${BACKPORTED:+, }$key→${TEMPLATE:t}" ;;
+                                e|E) if [[ -n "$ENV_FRAGMENT" ]]; then
+                                         tmpf=$(mktemp)
+                                         jq --arg k "$key" --argjson v "$val" '.[$k] = $v' "$ENV_FRAGMENT" > "$tmpf" \
+                                             && mv "$tmpf" "$ENV_FRAGMENT"
+                                         BACKPORTED="${BACKPORTED}${BACKPORTED:+, }$key→${ENV_FRAGMENT:t}"
+                                     else
+                                         echo "        ⏭️  no env fragment selected — skipped"
+                                         SKIPPED="${SKIPPED}${SKIPPED:+, }$key"
+                                     fi ;;
+                                *)   SKIPPED="${SKIPPED}${SKIPPED:+, }$key" ;;
+                            esac
+                        done
+                    fi ;;
+                *)
+                    echo "    ⏭️  Dropped (still recoverable from ${backup:t})" ;;
+            esac
         fi
     fi
 
     # 3) Write the result.
+    # Gate: when overwriting an existing file with no prior drift prompt (no drift
+    # was detected), still offer abort/review so a silent template-only update is
+    # never applied without the user's awareness.
+    if [[ -f "$CLAUDE_SETTINGS" && -z "$lost_top" && -z "$partial" ]] && \
+       ! diff -q "$CLAUDE_SETTINGS" "$PROSPECTIVE" >/dev/null 2>&1; then
+        echo ""
+        echo "⚙️  settings.json will change (template/env updated since last install)."
+        echo "   [Y/Enter] proceed  [r] review prospective  [a] abort"
+        read "write_gate?"
+        case "$write_gate" in
+            r|R)
+                echo ""
+                echo "    📋  Prospective settings.json saved to: $PROSPECTIVE"
+                echo "        diff $CLAUDE_SETTINGS $PROSPECTIVE"
+                echo "⏭️  Aborted — nothing written. Backup preserved: ${backup:t}"
+                exit 0 ;;
+            a|A)
+                echo "⏭️  Aborted — nothing written."
+                rm -f "${backup:-}" "$PROSPECTIVE"
+                exit 0 ;;
+        esac
+    fi
     cp "$PROSPECTIVE" "$CLAUDE_SETTINGS"
     rm -f "$PROSPECTIVE"
     if [[ -n "$ENV_FRAGMENT" ]]; then
