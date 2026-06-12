@@ -275,12 +275,40 @@ For each card entry that is new, refresh, or re-segmented:
 - **Assemble frontmatter:** `id` (new UUID via
   `python3 -c 'import uuid; print(uuid.uuid4())'`; **preserved** for existing
   cards), `slug` (readable kebab-case, unique; preserved for existing), `title`,
-  `source` (relative to the card's `.kb/`), `domain`, `tags`, `defines` (if any),
-  `builds_on` (only if known — do not invent), `created` (today; kept on update),
-  `updated` (today), `meta`. If the entry has a `supersedes` list, add
+  `source` (relative to the card's `.kb/`, **emitted as a markdown link** — see
+  below), `domain`, `tags`, `defines` (if any), `builds_on` (only if known — do
+  not invent), `created` (today; kept on update), `updated` (today), `meta`. If
+  the entry has a `supersedes` list, add
   `refines: [relative-path-to-superseded-source]` (the oldest/most-superseded
   source first). For a section card, record the section in `meta` (e.g.
   `meta.section`). Topic cards omit `kind`.
+
+  **`source` as a markdown link.** Emit the `source` value as a markdown link so
+  the file can be opened directly from the card (e.g. with `C-c C-o` in
+  Emacs `markdown-mode`). Use the angle-bracket form `[<filename>](<relative-path>)`
+  — it is always safe, handles spaces, and is CommonMark-compatible. For a
+  URL-first list source, keep the URL as a plain string and link only the local
+  capture path. Examples:
+
+  ```yaml
+  # single file (angle-bracket form — always use this)
+  source: "[Plan.md](<../Plan.md>)"
+
+  # single file with spaces in path
+  source: "[My Notes.md](<../My Notes.md>)"
+
+  # directory source
+  source: "[reports](<..>)"
+
+  # URL + local capture (list form)
+  source:
+    - https://www.youtube.com/watch?v=XXXXXXXX
+    - "[2026-06-08-grace.md](<../2026-06-08-grace.md>)"
+  ```
+
+  The YAML value must be quoted (double or single quotes) because `[` would
+  otherwise be parsed as a YAML flow sequence. kbi parses the link syntax
+  transparently when resolving the source path.
 - **Linkify** known terms best-effort: convert the first occurrence of any term
   in the gathered term index to `[[defining-card-slug|surface text]]`.
 - **Write** the card to `.kb/<file>.kb.md` (the `file` from `segmentation.yml`).
