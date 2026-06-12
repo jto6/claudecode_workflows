@@ -70,7 +70,7 @@
       "Bash(python* -m pip install * --break-system-packages)",
       "Bash(python* -m pip install * --break-system-packages *)"
     ],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "auto"
   },
   "hooks": {
     "PreToolUse": [
