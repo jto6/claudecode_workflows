@@ -21,7 +21,7 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
 ## Usage
 
 ```
-/kb-card [source | <url>] [-r] [-plan] [-resegment] [-update] [-visual]
+/kb-card [source | <url>] [-r] [-plan] [-resegment] [-visual]
          [-density coarse|normal|fine|exhaustive] [-cards <N>]
          [-file-summary | -no-file-summary]
          [-dir-summary | -no-dir-summary]
@@ -36,7 +36,6 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
   see Step 2.
 - `-resegment` — discard the existing boundaries for `source` and re-propose from
   scratch (use when content changed dramatically).
-- `-update` — refresh the content of existing cards whose source drifted.
 - `-visual` — **(planned, not implemented)** request multimodal capture of a video
   source (transcript + on-screen text + visual descriptions). Until implemented,
   reject with a notice; default capture is transcript-only.
