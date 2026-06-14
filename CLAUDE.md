@@ -86,14 +86,14 @@ Skills are multi-file AI assistant modules in the `skills/` directory. Each skil
 
 ```
 skills/
-├── ti-pptx/            # ti-pptx skill
-│   ├── SKILL.md
-│   ├── pptx_builder.py
-│   └── templates/
 └── vdk-tda54/          # vdk-tda54 skill
     ├── SKILL.md
     └── simprobe_boot_template.py
 ```
+
+**Note:** the `ti-pptx` skill formerly lived under `skills/ti-pptx/` here.
+It moved to its own repo at `~/dev/ti-pptx-skill/` (run that repo's
+`install.zsh` to activate the symlink at `~/.claude/skills/ti-pptx`).
 
 ### Command File Format
 
@@ -164,7 +164,10 @@ Required tools/packages...
 
 ## Existing skills
 
-- `/ti-pptx` — create TI-branded PowerPoint presentations using bundled templates and `TIPresentationBuilder`
-  (originally from [TI AI Tools repo](https://bitbucket.itg.ti.com/projects/TI_AI/repos/util_claude_code_tiai/browse/collaterals/skills/ti-pptx))
 - `vdk-tda54` — operate the TDA54 Synopsys Virtualizer VDK simulation: launch simulations, monitor UART
   output, configure core reset via simprobe, attach TRACE32/GDB debuggers, and SSH into the Linux guest
+
+## Skills hosted in other repos
+
+- `/ti-pptx` — TI-branded PowerPoint generation. Lives at `~/dev/ti-pptx-skill/`. See that repo's
+  `README.md` for design system, patterns library status, and `install.zsh` instructions.
