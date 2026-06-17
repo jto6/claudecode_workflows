@@ -91,9 +91,9 @@ skills/
     └── simprobe_boot_template.py
 ```
 
-**Note:** the `ti-pptx` skill formerly lived under `skills/ti-pptx/` here.
-It moved to its own repo at `~/dev/ti-pptx-skill/` (run that repo's
-`install.zsh` to activate the symlink at `~/.claude/skills/ti-pptx`).
+**Note:** slide-deck generation formerly lived under `skills/ti-pptx/` here. It is now the
+standalone, theme-driven `slides` skill at `~/dev/slide-skill/` (TI branding by default; run
+that repo's `install.zsh` to activate the symlink at `~/.claude/skills/slides`).
 
 ### Command File Format
 
@@ -169,5 +169,7 @@ Required tools/packages...
 
 ## Skills hosted in other repos
 
-- `/ti-pptx` — TI-branded PowerPoint generation. Lives at `~/dev/ti-pptx-skill/`. See that repo's
-  `README.md` for design system, patterns library status, and `install.zsh` instructions.
+- `slides` — on-brand slide-deck generation (theme-driven, TI by default). Lives at
+  `~/dev/slide-skill/`. See that repo's `README.md` for the design concepts, pattern library,
+  theming, and `install.zsh` instructions. (Supersedes the earlier `~/dev/ti-pptx-skill/`
+  experiment.)

@@ -1,8 +1,8 @@
 # Claude Skills Python Dependencies
 
-# PowerPoint generation skill (now hosted in ~/dev/ti-pptx-skill/, but the
-# venv is shared, so keeping python-pptx + Pillow here keeps both repos happy
-# even if only one's install.zsh ran most recently).
+# Slide-deck generation skill (now hosted in ~/dev/slide-skill/, but the venv
+# is shared, so keeping python-pptx + Pillow here keeps both repos happy even
+# if only one's install.zsh ran most recently).
 python-pptx>=0.6.21
 Pillow>=10.0.0
 

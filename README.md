@@ -107,12 +107,13 @@ Converts markdown files to professionally formatted PDFs with consistent styling
 
 Skills are multi-file AI assistant modules that Claude Code can invoke automatically based on context, or explicitly via `/skill-name`. Unlike single-file slash commands, skills bundle Python modules, templates, and other assets alongside their instructions.
 
-### `/ti-pptx` — TI PowerPoint Generator (now in its own repo)
+### `slides` — slide-deck generation (in its own repo)
 
-The `/ti-pptx` skill has moved to its own repository at `~/dev/ti-pptx-skill/`.
-Run that repo's `install.zsh` to set up the venv and activate the symlink at
-`~/.claude/skills/ti-pptx`. See its `README.md` for the current design-system,
-patterns library status, and benchmark analysis.
+Slide-deck generation lives in the standalone **`slides`** skill at `~/dev/slide-skill/` —
+theme-driven, with Texas Instruments branding by default. Run that repo's `install.zsh` to set
+up the venv and activate the symlink at `~/.claude/skills/slides`. See its `README.md` for the
+design concepts, pattern library, and theming. (Supersedes the earlier `~/dev/ti-pptx-skill/`
+experiment.)
 
 ### `vdk-tda54` — TDA54 VDK Simulation Guide
 
