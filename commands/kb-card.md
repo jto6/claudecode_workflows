@@ -168,6 +168,14 @@ Then continue from Step 1 with the converted temp file as the effective source.
 	- Confirm the location before writing, so running inside a sub-directory of a
 	  larger area doesn't root the area too deep (offer a parent directory when the
 	  area is bigger than the current folder).
+	- Always include a commented-out `source_exclude` section so the feature is
+	  discoverable. The built-in defaults (`*.conflict*`, `*.mm.md`, `CLAUDE.md`)
+	  are always active regardless of this field; note them in the comment so the
+	  user knows not to re-add them:
+	  ```yaml
+	  # source_exclude:   # glob patterns for files that should never become cards
+	  #   - "*.pdf"       # built-in defaults always active: *.conflict*, *.mm.md, CLAUDE.md
+	  ```
 	- Then proceed using the newly created `kb.yml`.
 
 ### Step 2: Segment — propose boundaries (adaptive-first), then reconcile
