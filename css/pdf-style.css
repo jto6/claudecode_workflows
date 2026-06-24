@@ -68,11 +68,12 @@ svg {
     shape-rendering: geometricPrecision;
 }
 
-/* Table styling with page break avoidance */
+/* Table styling: honor pandoc's emitted width / colgroup percentages and wrap
+   cell content so wide tables don't overflow the printed page. */
 table {
     border-collapse: collapse;
-    width: auto;
-    table-layout: auto;
+    width: 100%;
+    table-layout: fixed;
     page-break-inside: avoid;
     margin: 12pt auto;
 }
@@ -80,16 +81,14 @@ table {
 th, td {
     border: 1px solid #333;
     padding: 8px;
-    white-space: nowrap;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    vertical-align: top;
 }
 
 th {
     background-color: #f0f0f0;
-}
-
-td:last-child, th:last-child {
-    white-space: normal;
-    min-width: 200px;
 }
 
 /* List formatting with page break avoidance */
