@@ -16,6 +16,20 @@ To see all available commands, check: `ls ~/.claude/commands/`
 2. Follow the specific instructions provided in each command file
 3. These commands are designed to work across all repositories and projects
 
+## Personal Knowledge Base Index
+
+The most important files on this machine (notes, research, meeting notes, reference documents) are distilled into knowledge cards and cataloged in a generated index at `~/dev/kb/index/`.
+
+**Consult this index FIRST** whenever you need to locate the user's existing notes, documents, or domain knowledge. It is far faster, cheaper, and more reliable than searching the filesystem with find/grep/glob.
+
+Start by reading `~/dev/kb/index/INDEX.md` — it explains how to navigate the index (domains → entries with one-line summaries → distilled knowledge cards) and lists the current domains. Which directories are indexed is defined by the kbi config, so treat the index files themselves as the source of truth for coverage.
+
+Rules and related tooling:
+
+- The index files under `~/dev/kb/index/` are **generated — never edit them**; regenerate with `cd ~/dev/kbi && ./kbi.py configs/Study25-cards-md.yml`
+- For an ad-hoc content search across all indexed files: `cd ~/dev/kbi && ./kbi.py search configs/Study25-cards-md.yml "<regex>" -i`
+- New cards are authored with the `/kb-card` slash command; cards carry YAML frontmatter (`title`, `source`, `domain`, `tags`)
+
 ## Commit Trailer
 
 When creating git commits, end the message with a `Signed-off-by` trailer using
