@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# kb-feedback — leave a "comment card" about a knowledge base index lookup.
+#
+# Appends one JSONL record to ~/dev/kb/feedback.jsonl (override: KB_FEEDBACK_LOG).
+# Consumed by /kb-retro, which turns misses and partials into concrete
+# improvement actions (new cards, better summaries, domain fixes).
+
+set -euo pipefail
+
+LOG="${KB_FEEDBACK_LOG:-$HOME/dev/kb/feedback.jsonl}"
+
+usage() {
+    cat <<'EOF'
+Usage: kb-feedback --outcome hit|partial|miss --sought "<what you looked for>"
+                   [--note "<what happened>"] [--suggest "<what would have fixed it>"]
+
+Record the outcome of a knowledge base index lookup (~/dev/kb/index/).
+
+Outcomes:
+  hit      The index led straight to the answer (card sufficed).
+  partial  The index helped, but the card lacked detail (source file needed),
+           the essence summary was misleading, or extra digging was required.
+  miss     The index failed: no relevant entry/card, wrong domain, or the
+           lookup fell back to filesystem search (find/grep/glob).
+
+Guidance (for Claude sessions):
+  • Log facts, not judgments: name the exact topic sought and where the
+    lookup broke down — not "somewhat useful".
+  • Hits need only --outcome and --sought.
+  • On partial/miss, ALWAYS include --suggest with the concrete artifact that
+    would have made it work: the missing card (name the source file), the
+    stale/misleading summary, the wrong-domain placement, etc.
+
+Examples:
+  kb-feedback --outcome hit --sought "eMMC boot partitions"
+  kb-feedback --outcome partial --sought "TDA54 UART pinmux" \
+      --note "card covers boot flow only; needed source for pinmux table" \
+      --suggest "extend TDA5 card with a pinmux section or add a card for it"
+  kb-feedback --outcome miss --sought "zephyr west workspace layout" \
+      --note "no entry in technical.md; found via grep in ~/dev/zephyrproject" \
+      --suggest "run /kb-card on ~/dev/zephyrproject/NOTES.md"
+EOF
+    exit "${1:-0}"
+}
+
+outcome="" sought="" note="" suggest=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --outcome) outcome="${2:-}"; shift 2 ;;
+        --sought)  sought="${2:-}";  shift 2 ;;
+        --note)    note="${2:-}";    shift 2 ;;
+        --suggest) suggest="${2:-}"; shift 2 ;;
+        -h|--help) usage 0 ;;
+        *) echo "kb-feedback: unknown argument: $1" >&2; usage 1 ;;
+    esac
+done
+
+case "$outcome" in
+    hit|partial|miss) ;;
+    *) echo "kb-feedback: --outcome must be hit, partial, or miss" >&2; usage 1 ;;
+esac
+if [[ -z "$sought" ]]; then
+    echo "kb-feedback: --sought is required (what were you looking for?)" >&2
+    usage 1
+fi
+if [[ "$outcome" != "hit" && -z "$suggest" ]]; then
+    echo "kb-feedback: note: partial/miss entries are most useful with --suggest" >&2
+fi
+
+mkdir -p "$(dirname "$LOG")"
+OUTCOME="$outcome" SOUGHT="$sought" NOTE="$note" SUGGEST="$suggest" LOGFILE="$LOG" \
+python3 - <<'PYEOF'
+import json, os
+from datetime import datetime, timezone
+rec = {
+    "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "outcome": os.environ["OUTCOME"],
+    "sought": os.environ["SOUGHT"],
+    "project": os.getcwd(),
+}
+for key, env in (("note", "NOTE"), ("suggest", "SUGGEST")):
+    if os.environ.get(env):
+        rec[key] = os.environ[env]
+with open(os.environ["LOGFILE"], "a") as f:
+    f.write(json.dumps(rec) + "\n")
+PYEOF
+
+echo "kb-feedback: recorded $outcome → $LOG"

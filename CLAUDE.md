@@ -151,6 +151,7 @@ Required tools/packages...
 - `/distill` — extract core concepts from any source (URL, image, video, or text) into a concise markdown file
 - `/drawio-to-svg` — convert Draw.io files to SVG format with smart batch processing
 - `/kb-card` — author distilled knowledge-base cards (`.kb/*.kb.md`) from sources
+- `/kb-retro` — digest KB usage logs (telemetry + feedback) into an effectiveness report and improvement action list
 - `/md-to-pdf` — convert markdown files to professionally formatted PDFs
 - `/text-clean` — grammar, clarity, and conciseness editor; `bin/text-clean` is the fast-path router
 
@@ -159,6 +160,7 @@ Required tools/packages...
 - `clip` — clipboard helper: `clip read` / `clip write`; auto-detects wl-clipboard, xclip, pbcopy
 - `bulletize` — fast/slow router for `/bulletize`; fast path uses `llm-rewrite` + `prompts/bulletize.md`
 - `distill` — thin wrapper: always runs slow path via `claude -p /distill`
+- `kb-feedback` — append a KB index lookup "comment card" (outcome/sought/note/suggest) to `~/dev/kb/feedback.jsonl`; consumed by `/kb-retro`
 - `llm-rewrite` — fast-path engine: reads stdin, calls Anthropic API, writes stdout; see `bin/` section above for auth details
 - `text-clean` — fast/slow router for `/text-clean`; fast path uses `llm-rewrite` + `prompts/text-clean*.md`
 

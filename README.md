@@ -103,6 +103,19 @@ Converts markdown files to professionally formatted PDFs with consistent styling
 
 **Usage:** Type `/md-to-pdf filename.md` to convert any markdown file to PDF.
 
+### `/kb-retro` - Knowledge Base Retrospective
+
+Digests the knowledge base usage logs into an effectiveness report and improvement action list.
+
+**What it does:**
+
+- Reads `~/dev/kb/telemetry.jsonl` (objective usage events appended by the `kb-telemetry.sh` PostToolUse hook) and `~/dev/kb/feedback.jsonl` (comment cards left by sessions via `bin/kb-feedback`)
+- Computes index usage rates, card-sufficiency, and index bypasses
+- Produces a dated report with a concrete action list (missing cards to author, summaries to fix)
+- Archives the digested logs so the next period starts clean
+
+**Usage:** Type `/kb-retro` periodically (e.g. monthly), or `/kb-retro --keep-logs` for a dry run.
+
 ## Skills
 
 Skills are multi-file AI assistant modules that Claude Code can invoke automatically based on context, or explicitly via `/skill-name`. Unlike single-file slash commands, skills bundle Python modules, templates, and other assets alongside their instructions.
@@ -155,6 +168,7 @@ The workflows install hooks that provide:
 - **Tool execution feedback** - Shows what commands are being run
 - **File modification alerts** - Reminds to run tests after edits
 - **Session context** - Displays current project directory
+- **KB index telemetry** - Silently logs knowledge-base index/card usage and index bypasses to `~/dev/kb/telemetry.jsonl` (consumed by `/kb-retro`)
 
 ### Global Instructions
 
