@@ -24,6 +24,8 @@ The most important files on this machine (notes, research, meeting notes, refere
 
 Start by reading `~/dev/kb/index/INDEX.md` — it explains how to navigate the index (domains → entries with one-line summaries → distilled knowledge cards) and lists the current domains. Which directories are indexed is defined by the kbi config, so treat the index files themselves as the source of truth for coverage.
 
+**Domain search scope:** A topic may span multiple domains — read all plausible domain index files before concluding a lookup is complete. Do NOT stop at the first domain that seems relevant. Only restrict to a specific domain if the user explicitly says so.
+
 Rules and related tooling:
 
 - The index files under `~/dev/kb/index/` are **generated — never edit them**; regenerate with `cd ~/dev/kbi && ./kbi.py configs/Study25-cards-md.yml`
