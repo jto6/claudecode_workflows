@@ -24,6 +24,7 @@ Detailed explanation of the changes in the commit body:
 ```
 
 **Subject Line Examples:**
+
 - `timer: add automatic break transition with alarm`
 - `gui: implement dark/light theme switching`
 - `audio: add system sound file browser support`
@@ -34,6 +35,7 @@ Detailed explanation of the changes in the commit body:
 
 ### 1. Analyze All Changes
 Run these commands in parallel:
+
 - `git status` - Show all staged and unstaged changes
 - `git diff` - Show unstaged changes
 - `git diff --staged` - Show already staged changes
@@ -41,6 +43,7 @@ Run these commands in parallel:
 
 ### 2. Group Changes Logically
 Analyze all changes and group them by:
+
 - **Feature/functionality** - Related feature additions or modifications
 - **Subsystem** - Changes to specific modules or components
 - **Dependencies** - Related dependency updates or configuration changes
@@ -49,24 +52,32 @@ Analyze all changes and group them by:
 
 ### 3. Propose Atomic Commit Structure
 Create a plan showing:
+
 - Clear logical boundaries between commits
 - File lists for each proposed commit
 - Descriptive commit messages following convention
 - Dependencies between commits (if any)
 
 ### 4. Present Plan and Wait for Approval
-Show the complete commit plan with:
+Show the complete commit plan. For EACH commit, present the exact file list (including whether files are added/modified/deleted, and noting any partial staging of a file) and the COMPLETE commit message — subject line AND full detailed body, not a summary:
 ```
 📦 Proposed commit structure:
 
-Commit 1: "<subsystem>: <summary>"
-Files: file1.py, file2.js
+Commit 1 of N
+Files: file1.py (modified), file2.js (added)
+Commit message:
+<subsystem>: <summary>
 
-Commit 2: "<subsystem>: <summary>"  
-Files: file3.md, file4.json
+<full detailed body>
+
+Commit 2 of N
+...
 ```
 
+**CRITICAL — informed approval:** All of the above must appear as plain text in the response itself, BEFORE any approval prompt. Never rely on an approval dialog/tool (e.g., AskUserQuestion) to carry the details — such dialogs display only the question and option labels, leaving the user asked to approve content they cannot see. This matters doubly because option 2 below skips all later per-commit reviews, making this presentation the user's only chance to review the full messages.
+
 **Interactive Mode:** Present choices for user selection:
+
 1. ✅ Proceed with this commit plan
 2. 🚀 Proceed with this commit plan (no further approvals needed)
 3. 🔄 Modify the plan
@@ -138,12 +149,14 @@ For each approved commit, execute this loop:
 
 ### 4. Handle User Decision
 Based on user selection from plan approval:
+
 - **Option 1 (Proceed with plan)**: Execute each commit with individual approval prompts
 - **Option 2 (Proceed without further approvals)**: Execute all commits automatically without individual approval prompts
 - **Option 3 (Modify plan)**: Allow user to modify the commit plan
 - **Option 4 (Abort)**: Stop the commit process completely
 
 Based on individual commit approval (when in interactive mode):
+
 - **Option 1 (Accept)**: Create the commit and continue to next commit
 - **Option 2 (Modify)**: Allow user to modify files and retry this commit
 - **Option 3 (Skip)**: Leave previous commits intact, move to next commit in plan
@@ -156,6 +169,7 @@ Based on individual commit approval (when in interactive mode):
 ## Security and Quality Checks
 
 For each commit, verify:
+
 - No secrets, API keys, or sensitive data
 - No overly permissive file permissions
 - Proper input validation for new code
@@ -164,6 +178,7 @@ For each commit, verify:
 ## Final Steps
 
 After all commits:
+
 - Show summary of all commits created
 - Suggest next steps (push, create PR, etc.)
 - Note any follow-up tasks or test coverage gaps
@@ -171,15 +186,16 @@ After all commits:
 ## Instructions
 
 **Before starting, check if `-y` flag was provided:**
+
 - **Interactive Mode (default):** Follow all approval steps, including plan approval and individual commit approvals
 - **Auto-Approve Mode (-y):** Skip plan approval and individual commit approvals, but still show the plan and commit details
 
 **Plan Approval Options:**
+
 - **Option 1:** Proceed with individual approval for each commit
 - **Option 2:** Proceed without further approvals (equivalent to auto-approve mode for remaining commits)
 - **Option 3:** Modify the plan
 - **Option 4:** Abort the process
-
 1. **Always start with Phase 1** - full analysis and planning
 2. **MANDATORY: Verify test environment works** before any commits (Phase 1.5)
 3. **Interactive Mode:** Wait for user approval before executing any commits
