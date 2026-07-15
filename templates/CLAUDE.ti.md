@@ -32,7 +32,7 @@ Rules and related tooling:
 - For an ad-hoc content search across all indexed files: `cd ~/dev/kbi && ./kbi.py search configs/Study25-cards-md.yml "<regex>" -i`
 - New cards are authored with the `/kb-card` slash command; cards carry YAML frontmatter (`title`, `source`, `domain`, `tags`)
 
-**Leave a comment card after every KB index lookup** (successful or not) by running `kb-feedback` (on PATH; see `kb-feedback --help`). One line for hits: `kb-feedback --outcome hit --sought "<topic>"`. On `partial` or `miss`, always add `--note` (where the lookup broke down — facts, not judgments) and `--suggest` (the concrete fix: the missing card and its source file, the misleading summary, the wrong domain). This drives `/kb-retro`, which turns the feedback into index improvements.
+**Leave a comment card after every KB index lookup** (successful or not) by running `~/.claude/bin/kb-feedback` (see `~/.claude/bin/kb-feedback --help`). One line for hits: `~/.claude/bin/kb-feedback --outcome hit --sought "<topic>"`. On `partial` or `miss`, always add `--note` (where the lookup broke down — facts, not judgments) and `--suggest` (the concrete fix: the missing card and its source file, the misleading summary, the wrong domain). This drives `/kb-retro`, which turns the feedback into index improvements.
 
 ## Commit Trailer
 
