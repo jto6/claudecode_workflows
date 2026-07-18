@@ -219,7 +219,17 @@ For each directory in scope, decide how its sources divide into cards:
 	  entry's `exported_as` list. The export is **never distilled
 	  separately** — it adds no content beyond what the source format
 	  provides.
-	  Flag all detected pairs at the review gate (Step 2.3) so the author
+	  Write `supersedes`/`exported_as` entries in **dict form with a hash**
+	  — `{path: ../foo_v1.pdf, source_hash: sha256:<hex of raw bytes>}` —
+	  so the decision is durable and re-opens only when the absorbed file's
+	  content drifts (kbi --update then marks the directory stale and the
+	  file is re-surfaced as **new**). The bare-string form is legacy:
+	  accepted on read, never written; upgrade it to dict form (hash the
+	  current bytes) whenever the entry's card is touched anyway.
+	  Files already covered by a hashed `supersedes`/`exported_as` entry
+	  whose hash still matches are **settled** — do not re-compare, re-read,
+	  or re-flag them.
+	  Flag newly detected pairs at the review gate (Step 2.3) so the author
 	  can confirm or override.
 	- detect the natural atom — a folder of variants of one thing → one card; a
 	  folder of distinct documents → one card each;
@@ -242,7 +252,15 @@ For each directory in scope, decide how its sources divide into cards:
 	- source changed, boundary no longer resolves → break `locked` and mark
 	  **re-segment** (needs review);
 	- new source/section → mark **new** (needs review);
-	- source gone → mark the card **orphan**.
+	- source gone → mark the card **orphan**;
+	- file listed in the manifest's `excluded:` section with a matching
+	  `source_hash` → **settled**: skip it entirely (no reads, no
+	  re-evaluation, not mentioned at the review gate);
+	- excluded file whose hash has drifted → re-surface as **new** (the
+	  decision's input changed, so the decision is re-opened);
+	- excluded or absorbed (`supersedes`/`exported_as`) file that no longer
+	  exists → **prune** its entry (nothing to re-decide; also drop the
+	  canonical card's `refines:` pointer to it).
 3. **Review the delta (the manual adjustment gate).** Present only the changed
    entries (new / re-segment / orphan / refresh). Also surface any detected
    **near-duplicate or refinement pairs** here — show which file is proposed as
@@ -254,10 +272,18 @@ For each directory in scope, decide how its sources divide into cards:
    (non-uniform depth). (`-resegment <source>` forces step 1 fresh for that
    source, discarding its old entries.) With `-plan`, this is the explicit stop
    for review before any card body is written.
-4. **Write `segmentation.yml`** with the reviewed result — the effective
-   `density`, any `density_overrides`, and the card entries (slug, id, file,
-   source, scope, `locked`, `source_hash`). **If `-plan` was given, stop
-   here.**
+4. **Record exclusion decisions durably.** Whenever a file is deliberately
+   not carded — disposable scratch (`Delme`-style names), templates with no
+   distillable knowledge, empty/near-empty files, logs, non-knowledge
+   artifacts — write an entry in the manifest's top-level `excluded:` list:
+   `path` (relative to `.kb/`), a short `reason`, and `source_hash` (sha256
+   of the file's raw bytes). This applies to **silent** exclusions too —
+   silence must still be durable, or the file gets re-judged every run. An
+   excluded file is never re-evaluated while its hash matches.
+5. **Write `segmentation.yml`** with the reviewed result — the effective
+   `density`, any `density_overrides`, the card entries (slug, id, file,
+   source, scope, `locked`, `source_hash`, hashed `supersedes`/`exported_as`),
+   and the `excluded:` list. **If `-plan` was given, stop here.**
 
 `locked` means "never change this boundary silently" — it is still auto-escalated
 to review when content drift invalidates it; it is not immutable.
@@ -392,9 +418,13 @@ for the directory have been processed in Steps 3 and 3a, author or refresh a
 
 - For orphaned cards, confirm, then delete the `.kb.md` and remove the entry from
   `segmentation.yml`.
+- Prune `excluded:` and `supersedes`/`exported_as` entries whose files no longer
+  exist (and any `refines:` frontmatter pointing at them).
 - Do **not** run `kbi`. Report: cards created / refreshed / re-segmented /
-  retired; tags reused vs newly coined; and a reminder that the central catalog
-  updates only when the indexer is next run.
+  retired; **new exclusion and supersession decisions recorded** (path +
+  reason — settled entries from prior runs are not re-listed); tags reused vs
+  newly coined; and a reminder that the central catalog updates only when the
+  indexer is next run.
 
 ## Naming conventions
 
@@ -436,9 +466,11 @@ cards:
     file: foo.architecture.kb.md
     source: ../reports/foo.pdf
     supersedes:                  # optional: near-duplicate/refined sources absorbed
-      - ../reports/foo_v1.pdf    #   into this card; not separately distilled
+      - path: ../reports/foo_v1.pdf   # into this card; not separately distilled
+        source_hash: sha256:...       # decision re-opens if these bytes drift
     exported_as:                 # optional: format exports derived from this source
-      - ../reports/foo.pdf       #   not separately distilled (no extra content)
+      - path: ../reports/foo.pdf      # not separately distilled (no extra content)
+        source_hash: sha256:...
     scope:                       # omit for whole-file / whole-directory cards
       section: "Architecture"
       signature: "<short topic fingerprint>"
@@ -452,6 +484,13 @@ cards:
     source: ..
     title: Reports
     dir_hash: sha256:...         # hash of sorted source_hashes; drives dir_summary refresh
+excluded:                        # evaluated, deliberately not carded (durable decisions)
+  - path: ../reports/Delme.md
+    reason: disposable-by-name   # short, human-auditable
+    source_hash: sha256:...      # decision stands while this matches
+  - path: ../reports/RtoI Template.md
+    reason: template-no-knowledge
+    source_hash: sha256:...
 ```
 
 ## Card body shape
