@@ -22,6 +22,7 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
 
 ```
 /kb-card [source | <url>] [-r] [-plan] [-resegment] [-visual]
+         [--delta <file>]
          [-density coarse|normal|fine|exhaustive] [-cards <N>]
          [-file-summary | -no-file-summary]
          [-dir-summary | -no-dir-summary]
@@ -36,6 +37,10 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
   see Step 2.
 - `-resegment` — discard the existing boundaries for `source` and re-propose from
   scratch (use when content changed dramatically).
+- `--delta <file>` — **delta mode** (normally passed by `kbi --update`, not
+  typed by hand): the file is an authoritative content delta for the current
+  directory. See "Delta mode" below — it strictly scopes the run to what the
+  delta lists.
 - `-visual` — **(planned, not implemented)** request multimodal capture of a video
   source (transcript + on-screen text + visual descriptions). Until implemented,
   reject with a notice; default capture is transcript-only.
@@ -85,6 +90,63 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
   when the directory has ≥2 distinct sources). All other cards are topic cards
   (no `kind` field). See Steps 3a and 3b.
 
+## Mechanical helpers — never hand-compute hashes
+
+All hash and manifest bookkeeping is owned by kbi's helper verbs. Do not
+compute sha256 values in your head or with ad-hoc shell pipelines, and do not
+reverse-engineer serializations:
+
+- `python3 ~/dev/kbi/kbi.py hash <file>...` — the canonical `source_hash`
+  for any file (always the **raw bytes** of the named file; for a `.mm`
+  source this is the `.mm` itself, never its mm2md conversion).
+- `python3 ~/dev/kbi/kbi.py manifest-sync <dir>` — run as the **last step of
+  every successful pass**. Mechanically recomputes every card's
+  `source_hash`, hashed `supersedes`/`exported_as`/`excluded` entries,
+  `dir_hash` (canonical formula owned by kbi), `dir_fingerprint`, and
+  `updated`. Its report is authoritative: if it prints `dir_hash: changed`,
+  the directory's collective content moved — make sure the dir_summary card
+  body was refreshed this pass (Step 3b). Because it ratifies current
+  on-disk bytes as the decided state, only run it after the reconcile is
+  complete — never to silence unreviewed drift.
+
+When authoring entries mid-pass you may leave `source_hash` values as
+placeholders and let `manifest-sync` fill them; entry *structure* (paths,
+reasons, dict vs bare form) is still yours to write.
+
+## Delta mode (`--delta <file>`)
+
+In delta mode (how `kbi --update` invokes this command), the named YAML file
+is an **authoritative content delta** computed by kbi from the manifest's
+recorded hashes: `unchanged` (count), `changed` (path, old/new hash, bound
+card slugs, and sometimes an embedded unified `diff`), `new`, `deleted`
+(path + card slugs), `reopened` (a recorded exclusion/supersession whose
+input drifted), and `bootstrap`. Contract:
+
+- **Trust the delta.** Do not re-hash, re-list, or re-read anything it does
+  not name. Sources counted in `unchanged` are untouchable: no reads, no
+  "verify still accurate" passes, no re-tagging or re-linking of their
+  cards. The delta's hashes are the values to record — never recompute them.
+- **Scope work strictly to the delta**: reconcile (Step 2) and author
+  (Step 3) only the listed `changed`/`new`/`deleted`/`reopened` items. The
+  near-duplicate scan runs only for `new` files, compared against existing
+  sources/cards — never all-pairs over the directory.
+- **Use the embedded `diff` when present.** If the diff shows the change
+  cannot plausibly move a card boundary (typo fixes, link rewrites, small
+  additions within one section), refresh the affected card bodies from the
+  existing cards plus the diff without re-reading the whole source. Read
+  the full source only when a diff is absent or shows boundary-affecting
+  restructuring.
+- **`reopened` entries re-open exactly that decision.** Re-evaluate the
+  named file against its recorded decision (`excluded (...)` or
+  `supersedes/exported_as of card '<slug>'`) — maybe it still holds, maybe
+  the file diverged into its own document. Record the outcome.
+- **`bootstrap: true`** means no cards exist yet — run the normal full
+  pipeline; the delta carries no useful scoping.
+- Delta mode runs headless. Do not stop at the review gate waiting for a
+  reply that cannot come: apply the recommended option for each judgment
+  call, record it durably (Step 2.4), and list it in the report under
+  `Decisions made`.
+
 ## Instructions
 
 ### Step 0: Capture a remote source (URL)
@@ -112,12 +174,13 @@ Then continue from Step 1 with the captured local file as the source.
 If a source file has a `.mm` extension, convert it to markdown before analysis:
 
 - Run `python3 ~/dev/utility-scripts/freeplane/mm2md.py <source.mm> /tmp/<stem>.md`
-- Use the generated `/tmp/<stem>.md` as the **effective source** for all subsequent steps
-  (segmentation, distillation, `source_hash` computation).
+- Use the generated `/tmp/<stem>.md` as the **effective source** for segmentation and
+  distillation. **`source_hash` is NOT computed from it** — hashes are always the raw
+  bytes of the original `.mm` (use `~/dev/kbi/kbi.py hash`; see Mechanical helpers).
 - The card's `source` frontmatter field **still records the original `.mm` path** (relative
   to the card's `.kb/` directory), not the temp file.
-- The temp file is discarded after the run. On re-runs, re-convert fresh (so that any edits
-  to the `.mm` are picked up and the `source_hash` reflects the `.mm`, not a stale temp file).
+- The temp file is discarded after the run. On re-runs, re-convert fresh so that any edits
+  to the `.mm` are picked up.
 - `mm2md.py` extracts node hierarchy, richcontent (details/notes), numbered nodes, and
   `button_ok`/`button_cancel` icons. It does not capture non-hierarchical arrow edges or
   per-node graphical decorations — this is fine for knowledge distillation purposes.
@@ -420,6 +483,10 @@ for the directory have been processed in Steps 3 and 3a, author or refresh a
   `segmentation.yml`.
 - Prune `excluded:` and `supersedes`/`exported_as` entries whose files no longer
   exist (and any `refines:` frontmatter pointing at them).
+- Run `python3 ~/dev/kbi/kbi.py manifest-sync .` to finalize all hashes,
+  `dir_hash`, `dir_fingerprint`, and `updated` (see Mechanical helpers). If it
+  reports `dir_hash: changed` and the dir_summary body was not refreshed this
+  pass, refresh it now.
 - Do **not** run `kbi`. Report: cards created / refreshed / re-segmented /
   retired; **new exclusion and supersession decisions recorded** (path +
   reason — settled entries from prior runs are not re-listed); tags reused vs
