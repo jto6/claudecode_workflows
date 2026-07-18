@@ -37,7 +37,7 @@ command: `/home/jon/dev/kbi/docs/REFERENCE.md`. Rationale and decisions:
   see Step 2.
 - `-resegment` — discard the existing boundaries for `source` and re-propose from
   scratch (use when content changed dramatically).
-- `--delta <file>` — **delta mode** (normally passed by `kbi --update`, not
+- `--delta <file>` — **delta mode** (normally passed by `kbi --update-cards`, not
   typed by hand): the file is an authoritative content delta for the current
   directory. See "Delta mode" below — it strictly scopes the run to what the
   delta lists.
@@ -115,7 +115,7 @@ reasons, dict vs bare form) is still yours to write.
 
 ## Delta mode (`--delta <file>`)
 
-In delta mode (how `kbi --update` invokes this command), the named YAML file
+In delta mode (how `kbi --update-cards` invokes this command), the named YAML file
 is an **authoritative content delta** computed by kbi from the manifest's
 recorded hashes: `unchanged` (count), `changed` (path, old/new hash, bound
 card slugs, and sometimes an embedded unified `diff`), `new`, `deleted`
@@ -289,7 +289,7 @@ For each directory in scope, decide how its sources divide into cards:
 	  Write `supersedes`/`exported_as` entries in **dict form with a hash**
 	  — `{path: ../foo_v1.pdf, source_hash: sha256:<hex of raw bytes>}` —
 	  so the decision is durable and re-opens only when the absorbed file's
-	  content drifts (kbi --update then marks the directory stale and the
+	  content drifts (kbi --update-cards then marks the directory stale and the
 	  file is re-surfaced as **new**). The bare-string form is legacy:
 	  accepted on read, never written; upgrade it to dict form (hash the
 	  current bytes) whenever the entry's card is touched anyway.
@@ -539,7 +539,7 @@ for the directory have been processed in Steps 3 and 3a, author or refresh a
 version: 1
 updated: 2026-06-07
 density: normal                  # effective depth (from kb.yml/-run)
-dir_fingerprint: sha256:...      # hash of {name,size,mtime} for all sources; kbi --update staleness signal
+dir_fingerprint: sha256:...      # hash of {name,size,mtime} for all sources; kbi --update-cards staleness signal
 density_overrides:               # optional: non-uniform depth, by (source, section)
   - source: ../reports/foo.pdf
     section: "Architecture"
