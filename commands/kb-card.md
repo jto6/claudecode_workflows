@@ -140,12 +140,16 @@ input drifted), and `bootstrap`. Contract:
   named file against its recorded decision (`excluded (...)` or
   `supersedes/exported_as of card '<slug>'`) — maybe it still holds, maybe
   the file diverged into its own document. Record the outcome.
+- **`pending` entries are an interrupted run to resume.** Their boundaries
+  and decisions are already settled in the manifest — go straight to
+  Step 3 for them (author the bodies, clear each `status: pending` as you
+  go). Do not re-analyze or re-decide them.
 - **`bootstrap: true`** means no cards exist yet — run the normal full
   pipeline; the delta carries no useful scoping.
 - Delta mode runs headless. Do not stop at the review gate waiting for a
   reply that cannot come: apply the recommended option for each judgment
-  call, record it durably (Step 2.4), and list it in the report under
-  `Decisions made`.
+  call, record it durably with `decided: auto` (Step 2.4), and list it in
+  the report under `Decisions made`.
 
 ## Instructions
 
@@ -343,10 +347,30 @@ For each directory in scope, decide how its sources divide into cards:
    of the file's raw bytes). This applies to **silent** exclusions too —
    silence must still be durable, or the file gets re-judged every run. An
    excluded file is never re-evaluated while its hash matches.
+
+   **Mark who decided.** Every `excluded:` entry and every hashed
+   `supersedes`/`exported_as` entry carries `decided:` and `decided_on:`
+   (ISO date): `decided: user` when the author answered at the review gate,
+   `decided: auto` when applied headlessly (delta mode). Auto decisions are
+   auditable later via `kbi decisions`; when the author ratifies or edits
+   one, flip it to `decided: user`. A `decided: user` entry is never
+   auto-revisited while its recorded hash matches.
 5. **Write `segmentation.yml`** with the reviewed result — the effective
    `density`, any `density_overrides`, the card entries (slug, id, file,
    source, scope, `locked`, `source_hash`, hashed `supersedes`/`exported_as`),
    and the `excluded:` list. **If `-plan` was given, stop here.**
+
+   **Checkpoint before authoring.** Write the manifest *before* Step 3, with
+   `status: pending` on every card entry whose body is not yet authored
+   (new, refresh, or re-segment). Remove each entry's `status` as its card
+   body is written in Step 3, updating the manifest as you go. This makes
+   the plan and all recorded decisions durable: an interrupted run (spend
+   limit, crash) resumes from the pending entries instead of re-deriving
+   the analysis — kbi's staleness check treats pending entries as work to
+   resume, and the delta file lists them under `pending`. On any run,
+   resume `pending` entries whose `source_hash` still matches directly in
+   Step 3 — their boundaries and decisions are already settled; do not
+   re-run Steps 1–2 for them.
 
 `locked` means "never change this boundary silently" — it is still auto-escalated
 to review when content drift invalidates it; it is not immutable.
@@ -535,9 +559,13 @@ cards:
     supersedes:                  # optional: near-duplicate/refined sources absorbed
       - path: ../reports/foo_v1.pdf   # into this card; not separately distilled
         source_hash: sha256:...       # decision re-opens if these bytes drift
+        decided: user                 # user (review gate) | auto (headless delta mode)
+        decided_on: 2026-07-18
     exported_as:                 # optional: format exports derived from this source
       - path: ../reports/foo.pdf      # not separately distilled (no extra content)
         source_hash: sha256:...
+        decided: auto
+        decided_on: 2026-07-18
     scope:                       # omit for whole-file / whole-directory cards
       section: "Architecture"
       signature: "<short topic fingerprint>"
@@ -555,10 +583,18 @@ excluded:                        # evaluated, deliberately not carded (durable d
   - path: ../reports/Delme.md
     reason: disposable-by-name   # short, human-auditable
     source_hash: sha256:...      # decision stands while this matches
+    decided: auto                # audit later with `kbi decisions`
+    decided_on: 2026-07-18
   - path: ../reports/RtoI Template.md
     reason: template-no-knowledge
     source_hash: sha256:...
+    decided: user
+    decided_on: 2026-07-18
 ```
+
+A card entry may additionally carry `status: pending` — the Step 2.5
+checkpoint marker for a plan whose body is not yet authored; it is removed
+as the body is written and is never present in a completed run.
 
 ## Card body shape
 
