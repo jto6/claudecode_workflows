@@ -135,7 +135,7 @@ Flat list of concepts, each with at most one brief clarifying phrase. No nested 
 
 #### Level 2 — Standard (default)
 
-Nested bullet structure showing logical relationships. 3–7 top-level concepts. Omit examples, anecdotes, filler, and repetition unless they are themselves the point.
+Nested bullet structure showing logical relationships. 3–7 top-level concepts. Omit examples, anecdotes, filler, and repetition unless they are themselves the point. When the Core Concepts body exceeds ~20 lines, promote each outermost concept to a `###` header (see Output rules — Concept promotion).
 
 ```markdown
 # [Concise, descriptive title]
@@ -169,6 +169,7 @@ Nested bullet structure showing logical relationships. 3–7 top-level concepts.
 Same nested structure as level 2, but:
 
 - Include more top-level concepts (no strict upper limit — cover everything meaningful)
+- When the Core Concepts body exceeds ~20 lines, promote each outermost concept to a `###` header (see Output rules — Concept promotion)
 - Add deeper sub-points where they genuinely clarify
 - Retain important examples or anecdotes as child bullets when they are the clearest way to understand a concept
 - Label retained examples inline: `(example: ...)` or `(e.g. ...)`
@@ -261,6 +262,22 @@ Quote rules:
 - One sentence or clause maximum; trim to the sharpest part if needed
 - No attribution needed — the Source section covers that
 - High bar: most concepts won't have a quote; never add one just to fill space
+
+#### Concept promotion (levels 2 and 3 only)
+
+When the Core Concepts body would exceed ~20 lines, promote each outermost-level bullet to a `###` markdown header. Its sub-bullets remain as bullets beneath the header — the concept text itself is no longer a bullet point. Leave a blank line after the last sub-bullet before the next `###` header.
+
+```markdown
+### [Concept 1]
+- [sub-point]
+- [sub-point]
+	- [item]
+
+### [Concept 2]
+- [sub-point]
+```
+
+Level 1 is exempt — its concepts are single-line items that never warrant headers.
 
 #### Other rules
 - Do not pad: if a concept has no meaningful sub-points, omit sub-bullets
