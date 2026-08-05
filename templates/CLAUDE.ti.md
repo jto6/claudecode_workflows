@@ -198,7 +198,33 @@ With multi-line cells (for wrapping wide content):
 +----------------------+----------------------------------------------+
 ```
 
+### Diagrams: Prefer draw.io Over Text Rendering
+
+Do NOT render complicated diagrams as text (ASCII art or fenced `text` blocks) in markdown documents. Instead, create a draw.io diagram as an **editable SVG** (`.drawio.svg`) file and reference it directly from the markdown. An editable SVG is a single file that is simultaneously the draw.io source (the diagram XML is embedded in the SVG) and the rendering markdown viewers display — so cloned repos render correctly with no generation step, and there is no source/derivative pair to drift or to bloat the repo (a font-free `.drawio.svg` is only a few KB compressed).
+
+A diagram is "complicated" — and therefore requires draw.io — if it has ANY of:
+
+- More than ~4 interconnected components
+- Branching, merging, or crossing flows
+- Labeled edges between components
+- Multiple phases, lanes, or groupings (e.g., design time vs. run time)
+- Bidirectional relationships
+
+Text diagrams remain acceptable only for trivial structures: a single box, a linear chain of 2–4 items, or simple layer stacks with no edges. When in doubt, use draw.io.
+
+Workflow:
+
+- Author the diagram XML as a `.drawio` file, then produce the committable file with:
+  `drawio --export --embed-diagram --embed-svg-fonts false --output Name.drawio.svg Name.drawio`
+  and delete the intermediate `.drawio` (its content lives inside the `.drawio.svg`)
+- `--embed-diagram` keeps the file editable in draw.io; `--embed-svg-fonts false` is REQUIRED — without it the export embeds fonts and rasterizes labels, bloating the file ~10x
+- Verify the result before committing: the file must contain `content="&lt;mxfile` (embedded source present) and must NOT contain `@font-face`, `data:font`, or `data:image/png;base64` (no font/raster bloat; adjust the last check if the diagram legitimately embeds bitmap images). If the repository has a checker script (e.g., `scripts/check-drawio-svg.sh`), use it
+- Place the `.drawio.svg` file wherever the repository keeps diagrams (e.g., a `diagrams/` directory) and commit it — it is a source file, not a derivative
+- Visually verify the rendered result (e.g., export a PNG and inspect it) for overlapping boxes, edges routed through boxes, or clipped labels
+
 ### ASCII Art Diagrams
+
+The alignment rules below apply to the simple text diagrams still permitted under "Diagrams: Prefer draw.io Over Text Rendering" above.
 
 When creating ASCII art box diagrams (using characters like `┌`, `─`, `┐`, `│`, `└`, `┘`):
 
